@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UEFA Nations League 2026-28</title>
+    <title>UEFA Nations League 2026-27</title>
     <!-- Supabase Client Bibliothek laden -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -331,6 +331,18 @@
 
         .match-teams {
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .team-flag {
+            width: 18px;
+            height: 13px;
+            object-fit: cover;
+            border-radius: 2px;
+            border: 1px solid rgba(255,255,255,0.2);
+            vertical-align: middle;
         }
 
         .match-scorers {
@@ -389,9 +401,9 @@
         .badge-loss { background-color: var(--loss-color) !important; color: #fff !important; }
         .badge-future { background: #2a2a2a; color: var(--accent-gold); border: 1px solid var(--border-color); }
 
-        .team-highlight-win { background-color: var(--success-color); color: #fff; padding: 2px 6px; border-radius: 4px; }
-        .team-highlight-draw { background-color: var(--draw-color); color: #000; padding: 2px 6px; border-radius: 4px; }
-        .team-highlight-loss { background-color: var(--loss-color); color: #fff; padding: 2px 6px; border-radius: 4px; }
+        .team-highlight-win { background-color: var(--success-color); color: #fff; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; }
+        .team-highlight-draw { background-color: var(--draw-color); color: #000; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; }
+        .team-highlight-loss { background-color: var(--loss-color); color: #fff; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; }
 
         @media (max-width: 600px) {
             .ger-stats-grid { grid-template-columns: repeat(3, 1fr); }
@@ -408,7 +420,7 @@
     <header>
         <div class="app-title-area">
             <div class="app-title">UEFA Nations League</div>
-            <div class="subtitle">Live-Tabellen & Spielplan</div>
+            <div class="subtitle">Tabellen & Spielplan</div>
         </div>
         <button class="admin-btn" onclick="toggleAdmin()">Admin: <span id="adminStatus">Aus</span></button>
     </header>
@@ -503,7 +515,7 @@
 <!-- Modal: Alle DFB-Spiele -->
 <div class="modal" id="gerMatchesModal">
     <div class="modal-content" style="max-width: 520px;">
-        <h3 style="margin-bottom: 15px; color: var(--accent-gold);">🇩🇪 Alle DFB-Spiele</h3>
+        <h3 style="margin-bottom: 15px; color: var(--accent-gold);">Alle DFB-Spiele</h3>
         <div id="gerMatchesList" style="display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 15px; max-height: 55vh; overflow-y: auto;"></div>
         <button class="admin-btn" style="width: 100%; background: #444;" onclick="closeGerMatchesModal()">Schließen</button>
     </div>
@@ -535,28 +547,30 @@
         "Gruppe 4": ["Norwegen", "Portugal", "Dänemark", "Wales"]
     };
 
-    const FLAGGEN = {
-        "Deutschland": "🇩🇪",
-        "Niederlande": "🇳🇱",
-        "Griechenland": "🇬🇷",
-        "Serbien": "🇷🇸",
-        "Belgien": "🇧🇪",
-        "Frankreich": "🇫🇷",
-        "Türkei": "🇹🇷",
-        "Italien": "🇮🇹",
-        "Spanien": "🇪🇸",
-        "Kroatien": "🇭🇷",
-        "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-        "Tschechien": "🇨🇿",
-        "Norwegen": "🇳🇴",
-        "Portugal": "🇵🇹",
-        "Dänemark": "🇩🇰",
-        "Wales": "🏴󠁧󠁢󠁷󠁬󠁳󠁿"
+    // ISO-Codes für Flaggen-Bilder statt Unicode-Emojis
+    const FLAGGEN_CODES = {
+        "Deutschland": "de",
+        "Niederlande": "nl",
+        "Griechenland": "gr",
+        "Serbien": "rs",
+        "Belgien": "be",
+        "Frankreich": "fr",
+        "Türkei": "tr",
+        "Italien": "it",
+        "Spanien": "es",
+        "Kroatien": "hr",
+        "England": "gb-eng",
+        "Tschechien": "cz",
+        "Norwegen": "no",
+        "Portugal": "pt",
+        "Dänemark": "dk",
+        "Wales": "gb-wls"
     };
 
     function getTeamWithFlag(teamName) {
-        let flag = FLAGGEN[teamName] || "⚽";
-        return `${flag} ${teamName}`;
+        let code = FLAGGEN_CODES[teamName] || "un";
+        let flagImg = `<img src="https://flagcdn.com/20x15/${code}.png" alt="${teamName}" class="team-flag">`;
+        return `${flagImg} ${teamName}`;
     }
 
     window.onload = function() {
@@ -593,7 +607,6 @@
             let gefilterteSpiele = spiele.filter(s => s.gruppe.startsWith('Gruppe'));
             matchdays = [...new Set(gefilterteSpiele.map(s => s.spiel_datum))].sort();
 
-            // Automatisch den nächsten anstehenden Spieltag ermitteln (wo es noch nicht beendete Spiele gibt)
             let foundIndex = matchdays.findIndex(datum => {
                 let spieleAmTag = allMatches.filter(s => s.spiel_datum === datum);
                 return spieleAmTag.some(s => s.status !== 'beendet');
@@ -808,7 +821,7 @@
             item.innerHTML = `
                 <div>
                     <div style="font-size: 0.7rem; color: var(--text-muted);">${spiel.spiel_datum}</div>
-                    <div style="font-weight: 500; font-size: 0.9rem; color: #fff;">${heimDisplay} vs. ${gastDisplay}</div>
+                    <div style="font-weight: 500; font-size: 0.9rem; color: #fff; display: flex; align-items: center; gap: 6px;">${heimDisplay} vs. ${gastDisplay}</div>
                 </div>
                 <div class="${badgeClass}" style="font-weight: bold; padding: 5px 12px; border-radius: 4px; font-size: 0.9rem;">
                     ${scoreText}
