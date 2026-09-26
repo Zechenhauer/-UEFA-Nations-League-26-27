@@ -201,7 +201,8 @@
 
         .ger-stats-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .ger-action-btn {
@@ -215,6 +216,7 @@
             font-weight: bold;
             cursor: pointer;
             text-align: center;
+            min-width: 100px;
         }
         .ger-action-btn:hover {
             background: var(--accent-gold);
@@ -383,7 +385,7 @@
             background: var(--card-bg);
             padding: 20px;
             border-radius: 10px;
-            width: 100%; max-width: 450px;
+            width: 100%; max-width: 520px;
             border: 1px solid var(--border-color);
             text-align: center;
             max-height: 80vh;
@@ -393,6 +395,69 @@
             width: 100%; padding: 8px; margin-bottom: 10px;
             background: #2a2a2a; border: 1px solid var(--border-color); color: #fff; border-radius: 4px;
             font-size: 0.9rem;
+        }
+
+        /* Kader-Listendesign */
+        .kader-position-title {
+            font-size: 0.9rem;
+            color: var(--accent-gold);
+            text-align: left;
+            margin-top: 15px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 3px;
+            text-transform: uppercase;
+        }
+
+        .kader-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1f1f1f;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .kader-player-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .kader-number {
+            background: #2a2a2a;
+            color: var(--accent-gold);
+            font-weight: bold;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .kader-name {
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .kader-bday {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .kader-team {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--text-color);
         }
 
         /* Farb-Klassen für Ergebnis und Deutschland im Modal */
@@ -460,8 +525,9 @@
             </div>
         </div>
         <div class="ger-stats-actions">
-            <button class="ger-action-btn" onclick="openGerMatchesModal()">⚽ Alle DFB-Spiele</button>
-            <button class="ger-action-btn" onclick="openGerScorersModal()">🎯 DFB-Torschützen</button>
+            <button class="ger-action-btn" onclick="openGerMatchesModal()">⚽ DFB-Spiele</button>
+            <button class="ger-action-btn" onclick="openGerScorersModal()">🎯 Torschützen</button>
+            <button class="ger-action-btn" onclick="openKaderModal()">👥 Kader</button>
         </div>
     </div>
 
@@ -481,7 +547,7 @@
 
 <!-- Modal: Spiel bearbeiten -->
 <div class="modal" id="editModal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 450px;">
         <h3 id="modalTitle" style="margin-bottom: 15px; color: var(--accent-gold);">Spiel bearbeiten</h3>
         <input type="hidden" id="editMatchId">
         
@@ -514,7 +580,7 @@
 
 <!-- Modal: Alle DFB-Spiele -->
 <div class="modal" id="gerMatchesModal">
-    <div class="modal-content" style="max-width: 520px;">
+    <div class="modal-content">
         <h3 style="margin-bottom: 15px; color: var(--accent-gold);">Alle DFB-Spiele</h3>
         <div id="gerMatchesList" style="display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 15px; max-height: 55vh; overflow-y: auto;"></div>
         <button class="admin-btn" style="width: 100%; background: #444;" onclick="closeGerMatchesModal()">Schließen</button>
@@ -527,6 +593,15 @@
         <h3 style="margin-bottom: 15px; color: var(--accent-gold);">🎯 DFB-Torschützenliste</h3>
         <div id="gerScorersList" style="display: flex; flex-direction: column; gap: 6px; text-align: left; margin-bottom: 15px; max-height: 55vh; overflow-y: auto; font-size: 0.9rem;"></div>
         <button class="admin-btn" style="width: 100%; background: #444;" onclick="closeGerScorersModal()">Schließen</button>
+    </div>
+</div>
+
+<!-- Modal: DFB-Kader -->
+<div class="modal" id="kaderModal">
+    <div class="modal-content">
+        <h3 style="margin-bottom: 15px; color: var(--accent-gold);">👥 Aktueller Kader</h3>
+        <div id="kaderList" style="display: flex; flex-direction: column; text-align: left; margin-bottom: 15px; max-height: 60vh; overflow-y: auto; padding-right: 4px;"></div>
+        <button class="admin-btn" style="width: 100%; background: #444;" onclick="closeKaderModal()">Schließen</button>
     </div>
 </div>
 
@@ -547,7 +622,6 @@
         "Gruppe 4": ["Norwegen", "Portugal", "Dänemark", "Wales"]
     };
 
-    // ISO-Codes für Flaggen-Bilder statt Unicode-Emojis
     const FLAGGEN_CODES = {
         "Deutschland": "de",
         "Niederlande": "nl",
@@ -567,6 +641,82 @@
         "Wales": "gb-wls"
     };
 
+    // Vereinsflaggen (Länderzuordnung anhand des Vereinslandes)
+    const VEREINS_FLAGGEN = {
+        "Eintracht Frankfurt": "de",
+        "FC Augsburg": "de",
+        "Besiktas Istanbul": "tr",
+        "Ajax Amsterdam": "nl",
+        "FC Bayern München": "de",
+        "Borussia Dortmund": "de",
+        "RB Leipzig": "de",
+        "Inter Mailand": "it",
+        "VfB Stuttgart": "de",
+        "SC Freiburg": "de",
+        "Newcastle United": "gb-eng",
+        "FC Barcelona": "es",
+        "FSV Mainz 05": "de",
+        "Celtic Glasgow": "gb-sct",
+        "TSG Hoffenheim": "de",
+        "FC Köln": "de",
+        "FC Brentford": "gb-eng",
+        "SV Elversberg": "de",
+        "Leeds United": "gb-eng",
+        "FC Liverpool": "gb-eng",
+        "FC Arsenal": "gb-eng",
+        "Juventus Turin": "it"
+    };
+
+    const DFB_KADER = [
+        { pos: "Tor", nr: "2", name: "Noah Atubolu", bday: "25.05.2002", verein: "Eintracht Frankfurt" },
+        { pos: "Tor", nr: "1", name: "Finn Dahmen", bday: "27.03.1998", verein: "FC Augsburg" },
+        { pos: "Tor", nr: "21", name: "Alexander Nübel", bday: "30.09.1996", verein: "Besiktas Istanbul" },
+        { pos: "Tor", nr: "1", name: "Marc-André ter Stegen", bday: "30.04.1992", verein: "Ajax Amsterdam" },
+        { pos: "Tor", nr: "-", name: "Jonas Urbig", bday: "08.08.2003", verein: "FC Bayern München" },
+
+        { pos: "Abwehr", nr: "-", name: "Waldemar Anton", bday: "20.07.1996", verein: "Borussia Dortmund" },
+        { pos: "Abwehr", nr: "-", name: "Ridle Baku", bday: "08.04.1998", verein: "RB Leipzig" },
+        { pos: "Abwehr", nr: "22", name: "Hennes Behrens", bday: "19.01.2005", verein: "FC Augsburg" },
+        { pos: "Abwehr", nr: "2", name: "Yann Aurel Bisseck", bday: "29.11.2000", verein: "Inter Mailand" },
+        { pos: "Abwehr", nr: "18", name: "Nathaniel Brown", bday: "16.06.2003", verein: "FC Bayern München" },
+        { pos: "Abwehr", nr: "-", name: "Finn Jeltsch", bday: "17.07.2006", verein: "VfB Stuttgart" },
+        { pos: "Abwehr", nr: "-", name: "Maximilian Mittelstädt", bday: "18.03.1997", verein: "VfB Stuttgart" },
+        { pos: "Abwehr", nr: "-", name: "David Raum", bday: "22.04.1998", verein: "RB Leipzig" },
+        { pos: "Abwehr", nr: "3", name: "Max Rosenfelder", bday: "10.02.2003", verein: "SC Freiburg" },
+        { pos: "Abwehr", nr: "15", name: "Nico Schlotterbeck", bday: "01.12.1999", verein: "Borussia Dortmund" },
+        { pos: "Abwehr", nr: "4", name: "Jonathan Tah", bday: "11.02.1996", verein: "FC Bayern München" },
+        { pos: "Abwehr", nr: "-", name: "Malick Thiaw", bday: "08.08.2001", verein: "Newcastle United" },
+        { pos: "Abwehr", nr: "13", name: "Philipp Treu", bday: "03.12.2000", verein: "SC Freiburg" },
+        { pos: "Abwehr", nr: "14", name: "Josha Vagnoman", bday: "11.12.2000", verein: "VfB Stuttgart" },
+
+        { pos: "Mittelfeld", nr: "19", name: "Karim Adeyemi", bday: "18.01.2002", verein: "FC Barcelona" },
+        { pos: "Mittelfeld", nr: "11", name: "Nadiem Amiri", bday: "27.10.1996", verein: "FSV Mainz 05" },
+        { pos: "Mittelfeld", nr: "-", name: "Mika Baur", bday: "09.07.2004", verein: "Celtic Glasgow" },
+        { pos: "Mittelfeld", nr: "-", name: "Tom Bischof", bday: "28.06.2005", verein: "FC Bayern München" },
+        { pos: "Mittelfeld", nr: "-", name: "Bambasé Conté", bday: "07.07.2003", verein: "TSG Hoffenheim" },
+        { pos: "Mittelfeld", nr: "-", name: "Said El Mala", bday: "26.08.2006", verein: "FC Köln" },
+        { pos: "Mittelfeld", nr: "5", name: "Yannik Engelhardt", bday: "07.02.2001", verein: "SC Freiburg" },
+        { pos: "Mittelfeld", nr: "17", name: "Chris Führich", bday: "09.01.1998", verein: "VfB Stuttgart" },
+        { pos: "Mittelfeld", nr: "20", name: "Serge Gnabry", bday: "14.07.1995", verein: "FC Bayern München" },
+        { pos: "Mittelfeld", nr: "-", name: "Brajan Gruda", bday: "31.05.2004", verein: "RB Leipzig" },
+        { pos: "Mittelfeld", nr: "-", name: "Vitaly Janelt", bday: "10.05.1998", verein: "FC Brentford" },
+        { pos: "Mittelfeld", nr: "-", name: "Lennart Karl", bday: "22.02.2008", verein: "FC Bayern München" },
+        { pos: "Mittelfeld", nr: "-", name: "Felix Keidel", bday: "14.06.2003", verein: "SV Elversberg" },
+        { pos: "Mittelfeld", nr: "6", name: "Joshua Kimmich", bday: "08.02.1995", verein: "FC Bayern München" },
+        { pos: "Mittelfeld", nr: "10", name: "Jamal Musiala", bday: "26.02.2003", verein: "FC Bayern München" },
+        { pos: "Mittelfeld", nr: "8", name: "Felix Nmecha", bday: "10.10.2000", verein: "Borussia Dortmund" },
+        { pos: "Mittelfeld", nr: "-", name: "Aleksandar Pavlović", bday: "03.05.2004", verein: "FC Bayern München" },
+        { pos: "Mittelfeld", nr: "9", name: "Kevin Schade", bday: "27.11.2001", verein: "FC Brentford" },
+        { pos: "Mittelfeld", nr: "-", name: "Derry Scherhant", bday: "10.11.2002", verein: "SC Freiburg" },
+        { pos: "Mittelfeld", nr: "16", name: "Anton Stach", bday: "15.11.1998", verein: "Leeds United" },
+        { pos: "Mittelfeld", nr: "-", name: "Florian Wirtz", bday: "03.05.2003", verein: "FC Liverpool" },
+
+        { pos: "Angriff", nr: "-", name: "Jonathan Burkardt", bday: "11.07.2000", verein: "Eintracht Frankfurt" },
+        { pos: "Angriff", nr: "23", name: "Younes Ebnoutalib", bday: "13.09.2003", verein: "Eintracht Frankfurt" },
+        { pos: "Angriff", nr: "7", name: "Kai Havertz", bday: "11.06.1999", verein: "FC Arsenal" },
+        { pos: "Angriff", nr: "-", name: "Nick Woltemade", bday: "14.02.2002", verein: "Juventus Turin" }
+    ];
+
     function getTeamWithFlag(teamName) {
         let code = FLAGGEN_CODES[teamName] || "un";
         let flagImg = `<img src="https://flagcdn.com/20x15/${code}.png" alt="${teamName}" class="team-flag">`;
@@ -575,6 +725,7 @@
 
     window.onload = function() {
         loadNationsLeagueData();
+        renderKaderList();
     };
 
     function toggleAdmin() {
@@ -774,6 +925,54 @@
             html += `</tbody></table></div>`;
             container.innerHTML += html;
         });
+    }
+
+    // Kader-Liste aufbauen
+    function renderKaderList() {
+        const kaderContainer = document.getElementById('kaderList');
+        kaderContainer.innerHTML = '';
+
+        const positionen = ["Tor", "Abwehr", "Mittelfeld", "Angriff"];
+
+        positionen.forEach(pos => {
+            let spielerDerPos = DFB_KADER.filter(p => p.pos === pos);
+            if (spielerDerPos.length === 0) return;
+
+            let posHeader = document.createElement('div');
+            posHeader.className = 'kader-position-title';
+            posHeader.innerText = pos;
+            kaderContainer.appendChild(posHeader);
+
+            spielerDerPos.forEach(player => {
+                let vCode = VEREINS_FLAGGEN[player.verein] || "de";
+                let vFlag = `<img src="https://flagcdn.com/20x15/${vCode}.png" alt="${player.verein}" class="team-flag">`;
+                let numDisplay = player.nr !== "-" ? player.nr : "–";
+
+                let row = document.createElement('div');
+                row.className = 'kader-row';
+                row.innerHTML = `
+                    <div class="kader-player-info">
+                        <div class="kader-number">${numDisplay}</div>
+                        <div>
+                            <div class="kader-name">${player.name}</div>
+                            <div class="kader-bday">Geb. ${player.bday}</div>
+                        </div>
+                    </div>
+                    <div class="kader-team">
+                        ${vFlag} <span>${player.verein}</span>
+                    </div>
+                `;
+                kaderContainer.appendChild(row);
+            });
+        });
+    }
+
+    function openKaderModal() {
+        document.getElementById('kaderModal').style.display = 'flex';
+    }
+
+    function closeKaderModal() {
+        document.getElementById('kaderModal').style.display = 'none';
     }
 
     // Modal: Alle DFB-Spiele
