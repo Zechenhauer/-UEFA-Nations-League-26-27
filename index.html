@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UEFA Nations League 2026-28</title>
+    <!-- Supabase Client Bibliothek laden -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #0b0b0b;
+            --card-bg: #181818;
+            --accent-gold: #FFCC00;
+            --accent-red: #DD0000;
+            --text-color: #f0f0f0;
+            --text-muted: #888;
+            --border-color: #333;
+            --success-color: #2e7d32;
+            --draw-color: #f57c00;
+            --loss-color: #c62828;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+            border-top: 5px solid var(--accent-gold);
+            border-bottom: 5px solid var(--accent-red);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            border-radius: 12px;
+            z-index: 5;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-gold);
+        }
+
+        .app-banner {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .app-title-area {
+            text-align: left;
+        }
+
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(90deg, #fff, var(--accent-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .admin-btn {
+            background: #2a2a2a;
+            color: var(--accent-gold);
+            border: 1px solid var(--accent-gold);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .admin-btn:hover {
+            background: var(--accent-gold);
+            color: #000;
+        }
+
+        /* Deutschland Statistik-Kachel mit Bundestrainer */
+        .ger-stats-card {
+            background: linear-gradient(135deg, rgba(221, 0, 0, 0.2), rgba(255, 204, 0, 0.2));
+            border: 1px solid var(--accent-gold);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ger-stats-header {
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: var(--accent-gold);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 8px;
+        }
+
+        .bundestrainer-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bundestrainer-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent-gold);
+        }
+
+        .bundestrainer-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bundestrainer-label {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .bundestrainer-name {
+            font-size: 0.85rem;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .ger-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+
+        .ger-stat-box {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px 4px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .ger-stat-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .ger-stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            text-transform: uppercase;
+        }
+
+        .ger-stats-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .ger-action-btn {
+            flex: 1;
+            background: #1e1e1e;
+            color: var(--accent-gold);
+            border: 1px solid var(--accent-gold);
+            padding: 7px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+        .ger-action-btn:hover {
+            background: var(--accent-gold);
+            color: #000;
+        }
+
+        /* Spieltag-Navigation */
+        .matchday-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1f1f1f;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+        }
+
+        .nav-arrow {
+            background: #2a2a2a;
+            color: var(--accent-gold);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .nav-arrow:hover {
+            background: var(--accent-gold);
+            color: #000;
+        }
+
+        .nav-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            text-align: center;
+        }
+
+        h2.group-title {
+            font-size: 1.1rem;
+            margin-top: 25px;
+            margin-bottom: 8px;
+            color: var(--accent-gold);
+            border-left: 3px solid var(--accent-red);
+            padding-left: 8px;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 600px;
+        }
+
+        th, td {
+            padding: 8px 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: normal;
+            background: #121212;
+            font-size: 0.75rem;
+        }
+
+        th:nth-child(2), td:nth-child(2) {
+            text-align: left;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        tr.germany-row {
+            background: linear-gradient(90deg, rgba(221, 0, 0, 0.15), rgba(255, 204, 0, 0.15));
+            border-left: 4px solid var(--accent-gold);
+        }
+
+        .goal-diff-pos { color: var(--success-color); font-weight: bold; }
+        .goal-diff-neg { color: #ff5252; font-weight: bold; }
+
+        .matches-section {
+            margin-bottom: 25px;
+        }
+
+        .match-card {
+            background: #1f1f1f;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .match-card.germany-match {
+            border: 1px solid var(--accent-gold);
+            background: linear-gradient(90deg, #1f1f1f, rgba(255, 204, 0, 0.08));
+        }
+
+        .match-teams {
+            font-weight: 500;
+        }
+
+        .match-scorers {
+            font-size: 0.75rem;
+            color: var(--accent-gold);
+            margin-top: 2px;
+            font-style: italic;
+        }
+
+        .match-score {
+            font-weight: bold;
+            background: #2a2a2a;
+            padding: 3px 10px;
+            border-radius: 4px;
+            color: var(--accent-gold);
+            cursor: pointer;
+        }
+        .match-score:hover {
+            background: var(--accent-gold);
+            color: #000;
+        }
+
+        .match-info {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: right;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            justify-content: center; align-items: center;
+            z-index: 99;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%; max-width: 450px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal input, .modal select, .modal textarea {
+            width: 100%; padding: 8px; margin-bottom: 10px;
+            background: #2a2a2a; border: 1px solid var(--border-color); color: #fff; border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        /* Farb-Klassen für Ergebnis und Deutschland im Modal */
+        .badge-win { background-color: var(--success-color) !important; color: #fff !important; }
+        .badge-draw { background-color: var(--draw-color) !important; color: #000 !important; }
+        .badge-loss { background-color: var(--loss-color) !important; color: #fff !important; }
+        .badge-future { background: #2a2a2a; color: var(--accent-gold); border: 1px solid var(--border-color); }
+
+        .team-highlight-win { background-color: var(--success-color); color: #fff; padding: 2px 6px; border-radius: 4px; }
+        .team-highlight-draw { background-color: var(--draw-color); color: #000; padding: 2px 6px; border-radius: 4px; }
+        .team-highlight-loss { background-color: var(--loss-color); color: #fff; padding: 2px 6px; border-radius: 4px; }
+
+        @media (max-width: 600px) {
+            .ger-stats-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="loading-overlay" id="loadingOverlay">Lade Daten...</div>
+
+    <img src="https://lhusylpjnujlqomougmg.supabase.co/storage/v1/object/public/vereinslogos/nationalmannschaft.png" alt="Nationalmannschaft Banner" class="app-banner">
+
+    <header>
+        <div class="app-title-area">
+            <div class="app-title">UEFA Nations League</div>
+            <div class="subtitle">Live-Tabellen & Spielplan</div>
+        </div>
+        <button class="admin-btn" onclick="toggleAdmin()">Admin: <span id="adminStatus">Aus</span></button>
+    </header>
+
+    <!-- DFB Statistik-Kachel mit Jürgen Klopp -->
+    <div class="ger-stats-card" id="gerStatsCard">
+        <div class="ger-stats-header">
+            <div class="bundestrainer-info">
+                <img src="https://lhusylpjnujlqomougmg.supabase.co/storage/v1/object/public/vereinslogos/kloppo.png" alt="Jürgen Klopp" class="bundestrainer-img">
+                <div class="bundestrainer-text">
+                    <span class="bundestrainer-label">Bundestrainer</span>
+                    <span class="bundestrainer-name">Jürgen Klopp</span>
+                </div>
+            </div>
+            <span id="gerRankDisplay" style="font-size: 0.8rem; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 4px; color: var(--accent-gold);">Platz -</span>
+        </div>
+        <div class="ger-stats-grid">
+            <div class="ger-stat-box">
+                <div class="ger-stat-value" id="gerStatGP">0</div>
+                <div class="ger-stat-label">Spiele</div>
+            </div>
+            <div class="ger-stat-box">
+                <div class="ger-stat-value" id="gerStatWDL">0-0-0</div>
+                <div class="ger-stat-label">S / U / N</div>
+            </div>
+            <div class="ger-stat-box">
+                <div class="ger-stat-value" id="gerStatGoals">0:0</div>
+                <div class="ger-stat-label">Tore</div>
+            </div>
+            <div class="ger-stat-box">
+                <div class="ger-stat-value" id="gerStatGD">0</div>
+                <div class="ger-stat-label">Diff.</div>
+            </div>
+            <div class="ger-stat-box" style="border-color: var(--accent-gold);">
+                <div class="ger-stat-value" id="gerStatPts" style="color: var(--accent-gold);">0</div>
+                <div class="ger-stat-label">Punkte</div>
+            </div>
+        </div>
+        <div class="ger-stats-actions">
+            <button class="ger-action-btn" onclick="openGerMatchesModal()">⚽ Alle DFB-Spiele</button>
+            <button class="ger-action-btn" onclick="openGerScorersModal()">🎯 DFB-Torschützen</button>
+        </div>
+    </div>
+
+    <!-- Spielplan zum Durchklicken -->
+    <div class="matches-section">
+        <div class="matchday-nav">
+            <button class="nav-arrow" onclick="changeMatchday(-1)">❮ Vorheriger</button>
+            <div class="nav-title" id="matchdayTitle">1. Spieltag</div>
+            <button class="nav-arrow" onclick="changeMatchday(1)">Nächster ❯</button>
+        </div>
+        <div id="matchesContainer"></div>
+    </div>
+
+    <!-- Tabellen darunter -->
+    <div id="standingsContainer"></div>
+</div>
+
+<!-- Modal: Spiel bearbeiten -->
+<div class="modal" id="editModal">
+    <div class="modal-content">
+        <h3 id="modalTitle" style="margin-bottom: 15px; color: var(--accent-gold);">Spiel bearbeiten</h3>
+        <input type="hidden" id="editMatchId">
+        
+        <div style="display: flex; gap: 10px;">
+            <div>
+                <div style="font-size: 0.8rem; margin-bottom: 3px; text-align: left; color: var(--text-muted);">Tore Heim:</div>
+                <input type="number" id="editToreHeim" min="0">
+            </div>
+            <div>
+                <div style="font-size: 0.8rem; margin-bottom: 3px; text-align: left; color: var(--text-muted);">Tore Gast:</div>
+                <input type="number" id="editToreGast" min="0">
+            </div>
+        </div>
+
+        <div style="font-size: 0.8rem; margin-bottom: 3px; text-align: left; color: var(--text-muted);">Status:</div>
+        <select id="editStatus">
+            <option value="geplant">Geplant</option>
+            <option value="beendet">Beendet</option>
+        </select>
+
+        <div style="font-size: 0.8rem; margin-bottom: 3px; text-align: left; color: var(--text-muted);">Torschützen (z.B. Niederlande:Gakpo - Deutschland:F. Nmecha):</div>
+        <textarea id="editTorschuetzen" rows="2" placeholder="Torschützen eintragen..."></textarea>
+
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="admin-btn" style="width: 100%; background: #444;" onclick="closeModal()">Abbrechen</button>
+            <button class="admin-btn" style="width: 100%; background: var(--success-color); color:#fff;" onclick="saveMatch()">Speichern</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Alle DFB-Spiele -->
+<div class="modal" id="gerMatchesModal">
+    <div class="modal-content" style="max-width: 520px;">
+        <h3 style="margin-bottom: 15px; color: var(--accent-gold);">🇩🇪 Alle DFB-Spiele</h3>
+        <div id="gerMatchesList" style="display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 15px; max-height: 55vh; overflow-y: auto;"></div>
+        <button class="admin-btn" style="width: 100%; background: #444;" onclick="closeGerMatchesModal()">Schließen</button>
+    </div>
+</div>
+
+<!-- Modal: DFB-Torschützen -->
+<div class="modal" id="gerScorersModal">
+    <div class="modal-content" style="max-width: 420px;">
+        <h3 style="margin-bottom: 15px; color: var(--accent-gold);">🎯 DFB-Torschützenliste</h3>
+        <div id="gerScorersList" style="display: flex; flex-direction: column; gap: 6px; text-align: left; margin-bottom: 15px; max-height: 55vh; overflow-y: auto; font-size: 0.9rem;"></div>
+        <button class="admin-btn" style="width: 100%; background: #444;" onclick="closeGerScorersModal()">Schließen</button>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://lhusylpjnujlqomougmg.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_yXEueWILvAq-Vm2VfTuYyg_BIQeE1KK';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let isAdmin = false;
+    let allMatches = [];
+    let matchdays = [];
+    let currentMatchdayIndex = 0;
+
+    const GRUPPEN_TEAMS = {
+        "Gruppe 2": ["Deutschland", "Niederlande", "Griechenland", "Serbien"],
+        "Gruppe 1": ["Belgien", "Frankreich", "Türkei", "Italien"],
+        "Gruppe 3": ["Spanien", "Kroatien", "England", "Tschechien"],
+        "Gruppe 4": ["Norwegen", "Portugal", "Dänemark", "Wales"]
+    };
+
+    const FLAGGEN = {
+        "Deutschland": "🇩🇪",
+        "Niederlande": "🇳🇱",
+        "Griechenland": "🇬🇷",
+        "Serbien": "🇷🇸",
+        "Belgien": "🇧🇪",
+        "Frankreich": "🇫🇷",
+        "Türkei": "🇹🇷",
+        "Italien": "🇮🇹",
+        "Spanien": "🇪🇸",
+        "Kroatien": "🇭🇷",
+        "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+        "Tschechien": "🇨🇿",
+        "Norwegen": "🇳🇴",
+        "Portugal": "🇵🇹",
+        "Dänemark": "🇩🇰",
+        "Wales": "🏴󠁧󠁢󠁷󠁬󠁳󠁿"
+    };
+
+    function getTeamWithFlag(teamName) {
+        let flag = FLAGGEN[teamName] || "⚽";
+        return `${flag} ${teamName}`;
+    }
+
+    window.onload = function() {
+        loadNationsLeagueData();
+    };
+
+    function toggleAdmin() {
+        if (!isAdmin) {
+            let pin = prompt("Admin-PIN eingeben:");
+            if (pin === "1919") {
+                isAdmin = true;
+                document.getElementById('adminStatus').innerText = "Ein";
+                alert("Admin-Modus aktiviert! Klicke auf ein Ergebnis, um Tore und Torschützen zu bearbeiten.");
+            } else {
+                alert("Falsche PIN!");
+            }
+        } else {
+            isAdmin = false;
+            document.getElementById('adminStatus').innerText = "Aus";
+        }
+        renderMatches();
+    }
+
+    async function loadNationsLeagueData() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        try {
+            let { data: spiele, error } = await supabaseClient
+                .from('nations_league_spiele')
+                .select('*');
+
+            if (error) throw error;
+            allMatches = spiele;
+
+            let gefilterteSpiele = spiele.filter(s => s.gruppe.startsWith('Gruppe'));
+            matchdays = [...new Set(gefilterteSpiele.map(s => s.spiel_datum))].sort();
+
+            // Automatisch den nächsten anstehenden Spieltag ermitteln (wo es noch nicht beendete Spiele gibt)
+            let foundIndex = matchdays.findIndex(datum => {
+                let spieleAmTag = allMatches.filter(s => s.spiel_datum === datum);
+                return spieleAmTag.some(s => s.status !== 'beendet');
+            });
+            
+            if (foundIndex !== -1) {
+                currentMatchdayIndex = foundIndex;
+            }
+
+            renderStandings(spiele);
+            renderMatches();
+        } catch (err) {
+            console.error("Fehler beim Laden:", err);
+        } finally {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+    }
+
+    function changeMatchday(direction) {
+        currentMatchdayIndex += direction;
+        if (currentMatchdayIndex < 0) currentMatchdayIndex = matchdays.length - 1;
+        if (currentMatchdayIndex >= matchdays.length) currentMatchdayIndex = 0;
+        renderMatches();
+    }
+
+    function renderMatches() {
+        const container = document.getElementById('matchesContainer');
+        container.innerHTML = '';
+
+        if (matchdays.length === 0) return;
+
+        let currentDatum = matchdays[currentMatchdayIndex];
+        let spieltagNummer = currentMatchdayIndex + 1;
+
+        document.getElementById('matchdayTitle').innerText = `${spieltagNummer}. Spieltag (${currentDatum})`;
+
+        let spieleAmTag = allMatches.filter(s => s.spiel_datum === currentDatum);
+
+        spieleAmTag.sort((a, b) => {
+            let aIsGer = a.heimteam === 'Deutschland' || a.gastteam === 'Deutschland';
+            let bIsGer = b.heimteam === 'Deutschland' || b.gastteam === 'Deutschland';
+            if (aIsGer && !bIsGer) return -1;
+            if (!aIsGer && bIsGer) return 1;
+            return 0;
+        });
+
+        spieleAmTag.forEach(spiel => {
+            let scoreText = spiel.status === 'beendet' ? `${spiel.tore_heim} : ${spiel.tore_gast}` : `${spiel.spiel_zeit}`;
+            let isGermany = spiel.heimteam === 'Deutschland' || spiel.gastteam === 'Deutschland';
+            let cardClass = isGermany ? 'match-card germany-match' : 'match-card';
+            
+            let card = document.createElement('div');
+            card.className = cardClass;
+            
+            let clickAction = isAdmin ? `onclick="openEditModal(${spiel.id})"` : '';
+            let titleAttr = isAdmin ? `title="Klicken zum Bearbeiten"` : '';
+            let torschuetzenHtml = spiel.torschuetzen ? `<div class="match-scorers">⚽ ${spiel.torschuetzen}</div>` : '';
+
+            let heimName = getTeamWithFlag(spiel.heimteam);
+            let gastName = getTeamWithFlag(spiel.gastteam);
+
+            card.innerHTML = `
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--accent-gold); margin-bottom: 2px;">${spiel.gruppe}</div>
+                    <div class="match-teams">${heimName} vs. ${gastName}</div>
+                    ${torschuetzenHtml}
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="match-score" ${clickAction} ${titleAttr}>${scoreText} ${isAdmin ? '✏️' : ''}</div>
+                    <div class="match-info">${spiel.spiel_datum}<br>${spiel.status === 'beendet' ? 'Beendet' : 'Geplant'}</div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function renderStandings(spiele) {
+        const container = document.getElementById('standingsContainer');
+        container.innerHTML = '';
+
+        Object.keys(GRUPPEN_TEAMS).forEach(gruppeName => {
+            let teams = GRUPPEN_TEAMS[gruppeName];
+            let stats = {};
+            teams.forEach(t => {
+                stats[t] = { name: t, gp: 0, w: 0, d: 0, l: 0, f: 0, a: 0, gd: 0, p: 0 };
+            });
+
+            spiele.forEach(spiel => {
+                if (spiel.gruppe === gruppeName && spiel.status === 'beendet') {
+                    let heim = spiel.heimteam;
+                    let gast = spiel.gastteam;
+                    let toreH = spiel.tore_heim;
+                    let toreG = spiel.tore_gast;
+
+                    if (stats[heim]) { stats[heim].gp++; stats[heim].f += toreH; stats[heim].a += toreG; }
+                    if (stats[gast]) { stats[gast].gp++; stats[gast].f += toreG; stats[gast].a += toreH; }
+
+                    if (toreH > toreG) {
+                        if (stats[heim]) { stats[heim].w++; stats[heim].p += 3; }
+                        if (stats[gast]) { stats[gast].l++; }
+                    } else if (toreH < toreG) {
+                        if (stats[gast]) { stats[gast].w++; stats[gast].p += 3; }
+                        if (stats[heim]) { stats[heim].l++; }
+                    } else {
+                        if (stats[heim]) { stats[heim].d++; stats[heim].p += 1; }
+                        if (stats[gast]) { stats[gast].d++; stats[gast].p += 1; }
+                    }
+                }
+            });
+
+            let sortedTeams = Object.values(stats).map(t => {
+                t.gd = t.f - t.a;
+                return t;
+            }).sort((a, b) => {
+                if (b.p !== a.p) return b.p - a.p;
+                if (b.gd !== a.gd) return b.gd - a.gd;
+                return b.f - a.f;
+            });
+
+            if (gruppeName === "Gruppe 2") {
+                let gerIdx = sortedTeams.findIndex(t => t.name === "Deutschland");
+                if (gerIdx !== -1) {
+                    let ger = sortedTeams[gerIdx];
+                    document.getElementById('gerRankDisplay').innerText = `Platz ${gerIdx + 1}`;
+                    document.getElementById('gerStatGP').innerText = ger.gp;
+                    document.getElementById('gerStatWDL').innerText = `${ger.w}-${ger.d}-${ger.l}`;
+                    document.getElementById('gerStatGoals').innerText = `${ger.f}:${ger.a}`;
+                    document.getElementById('gerStatGD').innerText = ger.gd > 0 ? `+${ger.gd}` : ger.gd;
+                    document.getElementById('gerStatPts').innerText = ger.p;
+                }
+            }
+
+            let html = `
+                <h2 class="group-title">${gruppeName}</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 30px;">#</th>
+                                <th style="text-align: left;">Team</th>
+                                <th>GP</th><th>W</th><th>D</th><th>L</th><th>F</th><th>A</th><th>GD</th><th>P</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            sortedTeams.forEach((team, idx) => {
+                let gdFormatted = team.gd > 0 ? `+${team.gd}` : team.gd;
+                let gdClass = team.gd > 0 ? 'goal-diff-pos' : (team.gd < 0 ? 'goal-diff-neg' : '');
+                let rowClass = team.name === 'Deutschland' ? 'germany-row' : '';
+                let teamDisplay = getTeamWithFlag(team.name);
+
+                html += `
+                    <tr class="${rowClass}">
+                        <td>${idx + 1}</td>
+                        <td style="text-align: left; font-weight: 500;">${teamDisplay}</td>
+                        <td>${team.gp}</td><td>${team.w}</td><td>${team.d}</td><td>${team.l}</td>
+                        <td>${team.f}</td><td>${team.a}</td>
+                        <td class="${gdClass}">${gdFormatted}</td>
+                        <td style="font-weight: bold; color: var(--accent-gold);">${team.p}</td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table></div>`;
+            container.innerHTML += html;
+        });
+    }
+
+    // Modal: Alle DFB-Spiele
+    function openGerMatchesModal() {
+        const listContainer = document.getElementById('gerMatchesList');
+        listContainer.innerHTML = '';
+
+        let gerSpiele = allMatches.filter(s => s.heimteam === 'Deutschland' || s.gastteam === 'Deutschland');
+
+        gerSpiele.sort((a, b) => {
+            if (a.status === 'beendet' && b.status !== 'beendet') return -1;
+            if (a.status !== 'beendet' && b.status === 'beendet') return 1;
+            return a.spiel_datum.localeCompare(b.spiel_datum);
+        });
+
+        gerSpiele.forEach(spiel => {
+            let isHome = spiel.heimteam === 'Deutschland';
+            let badgeClass = 'badge-future';
+            let teamHighlightClass = '';
+            let scoreText = spiel.status === 'beendet' ? `${spiel.tore_heim} : ${spiel.tore_gast}` : spiel.spiel_zeit;
+
+            if (spiel.status === 'beendet') {
+                let gerTore = isHome ? spiel.tore_heim : spiel.tore_gast;
+                let gegnerTore = isHome ? spiel.tore_gast : spiel.tore_heim;
+                if (gerTore > gegnerTore) {
+                    badgeClass = 'badge-win';
+                    teamHighlightClass = 'team-highlight-win';
+                } else if (gerTore < gegnerTore) {
+                    badgeClass = 'badge-loss';
+                    teamHighlightClass = 'team-highlight-loss';
+                } else {
+                    badgeClass = 'badge-draw';
+                    teamHighlightClass = 'team-highlight-draw';
+                }
+            }
+
+            let heimName = getTeamWithFlag(spiel.heimteam);
+            let gastName = getTeamWithFlag(spiel.gastteam);
+
+            let heimDisplay = isHome ? `<span class="${teamHighlightClass}">${heimName}</span>` : heimName;
+            let gastDisplay = !isHome ? `<span class="${teamHighlightClass}">${gastName}</span>` : gastName;
+
+            let item = document.createElement('div');
+            item.style.cssText = "background: #1f1f1f; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); font-size: 0.85rem; margin-bottom: 6px;";
+            item.innerHTML = `
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">${spiel.spiel_datum}</div>
+                    <div style="font-weight: 500; font-size: 0.9rem; color: #fff;">${heimDisplay} vs. ${gastDisplay}</div>
+                </div>
+                <div class="${badgeClass}" style="font-weight: bold; padding: 5px 12px; border-radius: 4px; font-size: 0.9rem;">
+                    ${scoreText}
+                </div>
+            `;
+            listContainer.appendChild(item);
+        });
+
+        document.getElementById('gerMatchesModal').style.display = 'flex';
+    }
+
+    function closeGerMatchesModal() {
+        document.getElementById('gerMatchesModal').style.display = 'none';
+    }
+
+    // Modal: DFB-Torschützenliste
+    function openGerScorersModal() {
+        const listContainer = document.getElementById('gerScorersList');
+        listContainer.innerHTML = '';
+
+        let gerSpiele = allMatches.filter(s => (s.heimteam === 'Deutschland' || s.gastteam === 'Deutschland') && s.torschuetzen && s.torschuetzen.trim() !== '');
+
+        let scorerCounts = {};
+
+        gerSpiele.forEach(spiel => {
+            let parts = spiel.torschuetzen.split(/[\n,-]+/);
+            
+            parts.forEach(part => {
+                let trimmed = part.trim();
+                if (trimmed.toLowerCase().includes('deutschland')) {
+                    let subParts = trimmed.split(':');
+                    if (subParts.length > 1) {
+                        let teamPart = subParts[0].trim().toLowerCase();
+                        if (teamPart.includes('deutschland')) {
+                            extractPlayer(subParts[1]);
+                        }
+                    }
+                } else if (!trimmed.toLowerCase().includes('niederlande') && 
+                           !trimmed.toLowerCase().includes('frankreich') && 
+                           !trimmed.toLowerCase().includes('ungarn') && 
+                           !trimmed.toLowerCase().includes('italien') && 
+                           !trimmed.toLowerCase().includes('spanien') && 
+                           !trimmed.toLowerCase().includes('türkei') && 
+                           !trimmed.toLowerCase().includes('griechenland') && 
+                           !trimmed.toLowerCase().includes('serbien') && 
+                           !trimmed.toLowerCase().includes('kroatien') && 
+                           !trimmed.toLowerCase().includes('england') && 
+                           !trimmed.toLowerCase().includes('tschechien') && 
+                           !trimmed.toLowerCase().includes('norwegen') && 
+                           !trimmed.toLowerCase().includes('portugal') && 
+                           !trimmed.toLowerCase().includes('dänemark') && 
+                           !trimmed.toLowerCase().includes('wales') && 
+                           !trimmed.toLowerCase().includes('belgien')) {
+                    extractPlayer(trimmed);
+                }
+            });
+        });
+
+        function extractPlayer(text) {
+            let clean = text.replace(/\s*\(.*?\)/g, '').trim();
+            clean = clean.replace(/^deutschland[:\s]*/i, '').trim();
+            if (clean && clean.length > 1) {
+                scorerCounts[clean] = (scorerCounts[clean] || 0) + 1;
+            }
+        }
+
+        let sortedScorers = Object.entries(scorerCounts).sort((a, b) => b[1] - a[1]);
+
+        if (sortedScorers.length === 0) {
+            listContainer.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 20px;">Noch keine deutschen Torschützen erkannt.</div>`;
+        } else {
+            sortedScorers.forEach(([player, count], idx) => {
+                let row = document.createElement('div');
+                row.style.cssText = "background: #1f1f1f; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;";
+                row.innerHTML = `
+                    <div style="color: #fff; font-weight: 500;">${idx + 1}. ${player}</div>
+                    <div style="background: var(--accent-gold); color: #000; font-weight: bold; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">
+                        ${count} ${count === 1 ? 'Tor' : 'Tore'}
+                    </div>
+                `;
+                listContainer.appendChild(row);
+            });
+        }
+
+        document.getElementById('gerScorersModal').style.display = 'flex';
+    }
+
+    function closeGerScorersModal() {
+        document.getElementById('gerScorersModal').style.display = 'none';
+    }
+
+    function openEditModal(matchId) {
+        let spiel = allMatches.find(s => s.id === matchId);
+        if (!spiel) return;
+
+        document.getElementById('editMatchId').value = spiel.id;
+        document.getElementById('modalTitle').innerText = `${spiel.heimteam} vs. ${spiel.gastteam}`;
+        document.getElementById('editToreHeim').value = spiel.tore_heim;
+        document.getElementById('editToreGast').value = spiel.tore_gast;
+        document.getElementById('editStatus').value = spiel.status;
+        document.getElementById('editTorschuetzen').value = spiel.torschuetzen || '';
+
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    async function saveMatch() {
+        let id = document.getElementById('editMatchId').value;
+        let tore_heim = parseInt(document.getElementById('editToreHeim').value) || 0;
+        let tore_gast = parseInt(document.getElementById('editToreGast').value) || 0;
+        let status = document.getElementById('editStatus').value;
+        let torschuetzen = document.getElementById('editTorschuetzen').value;
+
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        closeModal();
+
+        let { error } = await supabaseClient
+            .from('nations_league_spiele')
+            .update({ tore_heim, tore_gast, status, torschuetzen })
+            .eq('id', id);
+
+        if (error) {
+            alert("Fehler beim Speichern!");
+            console.error(error);
+        } else {
+            loadNationsLeagueData();
+        }
+    }
+</script>
+</body>
+</html>
