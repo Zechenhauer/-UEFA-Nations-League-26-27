@@ -3,1155 +3,1031 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UEFA Nations League 2026-27</title>
-    <!-- Supabase Client Bibliothek laden -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>UEFA Nations League - Alle Ligen & Live</title>
+    
+    <!-- Perfektes Inline-SVG Icon für den Homescreen -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23004d9d%22/><text x=%2250%22 y=%2270%22 font-size=%2260%22 text-anchor=%22middle%22>⚽</text></svg>">
+    <link rel="apple-touch-icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23004d9d%22/><text x=%2250%22 y=%2270%22 font-size=%2260%22 text-anchor=%22middle%22>⚽</text></svg>">
+
     <style>
         :root {
             --bg-color: #0b0b0b;
             --card-bg: #181818;
+            --card-inner: #1f1f1f;
+            --card-box: #141414;
             --accent-gold: #FFCC00;
             --accent-red: #DD0000;
             --text-color: #f0f0f0;
             --text-muted: #888;
             --border-color: #333;
-            --success-color: #2e7d32;
-            --draw-color: #f57c00;
-            --loss-color: #c62828;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
-            padding: 15px;
+            padding: 10px;
             display: flex;
             justify-content: center;
+            min-height: 100vh;
         }
 
         .container {
             width: 100%;
-            max-width: 900px;
+            max-width: 1100px;
             background: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.7);
-            border-top: 5px solid var(--accent-gold);
-            border-bottom: 5px solid var(--accent-red);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+            border-bottom: 4px solid var(--accent-red);
             position: relative;
             overflow: hidden;
         }
 
-        .loading-overlay {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
+        /* DEUTSCHLAND FLAGGEN BANNER GANZ OBEN */
+        .germany-banner {
             width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            border-radius: 12px;
-            z-index: 5;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--accent-gold);
+            height: 14px;
+            display: flex;
+            flex-direction: column;
+            border-radius: 4px 4px 0 0;
+            overflow: hidden;
+            margin: -15px -15px 15px -15px;
+            width: calc(100% + 30px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+            border-bottom: 1px solid rgba(255, 204, 0, 0.4);
         }
-
-        .app-banner {
-            width: 100%;
-            height: 160px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border-color);
-        }
+        .banner-black { background-color: #000; flex: 1; }
+        .banner-red { background-color: #DD0000; flex: 1; }
+        .banner-gold { background-color: #FFCC00; flex: 1; }
 
         header {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .app-title-area {
-            text-align: left;
+            text-align: center; margin-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 8px;
         }
 
         .app-title {
-            font-size: 1.5rem;
+            font-size: 1.25rem; font-weight: bold; color: #fff;
+            background: linear-gradient(90deg, #fff, var(--accent-gold));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-align: left;
+        }
+
+        .subtitle { font-size: 0.75rem; color: var(--text-muted); margin-top: 1px; text-align: left; }
+
+        .header-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+        .action-btn {
+            background: #2a2a2a; color: var(--accent-gold); border: 1px solid var(--accent-gold);
+            padding: 4px 10px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; font-weight: bold;
+        }
+        .action-btn:hover { background: var(--accent-gold); color: #000; }
+
+        .select-box {
+            background: #2a2a2a; color: var(--accent-gold); border: 1px solid var(--border-color);
+            padding: 4px 8px; border-radius: 5px; font-size: 0.75rem; font-weight: bold; cursor: pointer; outline: none;
+        }
+
+        @keyframes pulse-neon {
+            0%, 100% { opacity: 1; filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.8)); }
+            50% { opacity: 0.4; filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.2)); }
+        }
+        .live-badge {
+            display: none; color: #f87171; background: rgba(239, 68, 68, 0.2);
+            padding: 3px 8px; border-radius: 5px; border: 1px solid rgba(239, 68, 68, 0.5);
+            font-weight: bold; align-items: center; gap: 5px; font-size: 0.7rem;
+            animation: pulse-neon 1.2s infinite;
+        }
+        .live-dot { width: 6px; height: 6px; background-color: #ef4444; border-radius: 50%; }
+
+        /* DFB-HIGHLIGHT-KACHEL */
+        .dfb-hero-card {
+            background: linear-gradient(135deg, #1c1402, #181200, #141414);
+            border: 1px solid rgba(255, 204, 0, 0.35);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .dfb-hero-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 204, 0, 0.2);
+            padding-bottom: 10px;
+        }
+
+        .dfb-coach-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dfb-coach-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent-gold);
+            box-shadow: 0 0 8px rgba(255, 204, 0, 0.4);
+        }
+
+        .dfb-coach-title {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .dfb-coach-name {
+            font-size: 1rem;
             font-weight: bold;
             color: #fff;
-            background: linear-gradient(90deg, #fff, var(--accent-gold));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
 
-        .subtitle {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-
-        .admin-btn {
-            background: #2a2a2a;
+        .dfb-rank-badge {
+            background: #111;
             color: var(--accent-gold);
             border: 1px solid var(--accent-gold);
             padding: 6px 12px;
             border-radius: 6px;
+            font-weight: bold;
             font-size: 0.8rem;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .admin-btn:hover {
-            background: var(--accent-gold);
-            color: #000;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
         }
 
-        /* Deutschland Statistik-Kachel mit Bundestrainer */
-        .ger-stats-card {
-            background: linear-gradient(135deg, rgba(221, 0, 0, 0.2), rgba(255, 204, 0, 0.2));
-            border: 1px solid var(--accent-gold);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .ger-stats-header {
-            font-weight: bold;
-            font-size: 0.95rem;
-            color: var(--accent-gold);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 8px;
-        }
-
-        .bundestrainer-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .bundestrainer-img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--accent-gold);
-        }
-
-        .bundestrainer-text {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .bundestrainer-label {
-            font-size: 0.6rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-
-        .bundestrainer-name {
-            font-size: 0.85rem;
-            color: #fff;
-            font-weight: bold;
-        }
-
-        .ger-stats-grid {
+        .dfb-stats-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 8px;
-            text-align: center;
+            margin-top: 12px;
         }
 
-        .ger-stat-box {
-            background: rgba(0, 0, 0, 0.4);
-            padding: 8px 4px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
+        @media (max-width: 768px) {
+            .dfb-stats-grid { grid-template-columns: repeat(3, 1fr); }
         }
 
-        .ger-stat-value {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #fff;
-        }
-
-        .ger-stat-label {
-            font-size: 0.65rem;
-            color: var(--text-muted);
-            margin-top: 2px;
-            text-transform: uppercase;
-        }
-
-        .ger-stats-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .ger-action-btn {
-            flex: 1;
-            background: #1e1e1e;
-            color: var(--accent-gold);
-            border: 1px solid var(--accent-gold);
-            padding: 7px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            cursor: pointer;
-            text-align: center;
-            min-width: 100px;
-        }
-        .ger-action-btn:hover {
-            background: var(--accent-gold);
-            color: #000;
-        }
-
-        /* Spieltag-Navigation */
-        .matchday-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #1f1f1f;
+        .dfb-stat-box {
+            background: var(--card-box);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 10px 15px;
-            margin-bottom: 15px;
+            padding: 8px;
+            text-align: center;
+        }
+        .dfb-stat-box.highlight {
+            border: 1px solid var(--accent-gold);
         }
 
-        .nav-arrow {
-            background: #2a2a2a;
-            color: var(--accent-gold);
-            border: 1px solid var(--border-color);
-            padding: 6px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-        .nav-arrow:hover {
-            background: var(--accent-gold);
-            color: #000;
-        }
-
-        .nav-title {
+        .dfb-stat-value {
             font-size: 1rem;
-            font-weight: bold;
+            font-weight: 800;
             color: #fff;
-            text-align: center;
         }
-
-        h2.group-title {
-            font-size: 1.1rem;
-            margin-top: 25px;
-            margin-bottom: 8px;
+        .dfb-stat-box.highlight .dfb-stat-value {
             color: var(--accent-gold);
-            border-left: 3px solid var(--accent-red);
-            padding-left: 8px;
         }
 
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 15px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-            min-width: 600px;
-        }
-
-        th, td {
-            padding: 8px 10px;
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        th {
+        .dfb-stat-label {
+            font-size: 0.6rem;
             color: var(--text-muted);
-            font-weight: normal;
-            background: #121212;
-            font-size: 0.75rem;
+            text-transform: uppercase;
+            margin-top: 2px;
+            font-weight: bold;
         }
 
-        th:nth-child(2), td:nth-child(2) {
-            text-align: left;
+        /* SPIELTAGE LEISTE / FILTER */
+        .filter-bar {
+            display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; background: var(--card-inner); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color);
+        }
+        .filter-group { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .filter-btn {
+            background: #1f1f1f; color: var(--text-muted); border: 1px solid var(--border-color);
+            padding: 5px 12px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; font-weight: bold;
+        }
+        .filter-btn.active {
+            background: var(--accent-gold); color: #000; border-color: var(--accent-gold);
         }
 
-        tr:hover {
-            background: rgba(255, 255, 255, 0.02);
+        .section-box {
+            background: var(--card-inner); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 12px; margin-bottom: 15px;
         }
 
-        tr.germany-row {
-            background: linear-gradient(90deg, rgba(221, 0, 0, 0.15), rgba(255, 204, 0, 0.15));
-            border-left: 4px solid var(--accent-gold);
+        /* TABELLEN-LAYOUT */
+        .match-table-container {
+            width: 100%; overflow-x: auto; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px; background: #121212;
+        }
+        .match-grid-table {
+            width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 750px;
+        }
+        .match-grid-table th {
+            background: #1b0000; color: #ff8888; padding: 8px 10px; text-align: left; font-size: 0.7rem; text-transform: uppercase; border-bottom: 2px solid var(--accent-red);
+        }
+        .match-grid-table th:nth-child(1) { width: 15%; }
+        .match-grid-table th:nth-child(2) { width: 35%; }
+        .match-grid-table th:nth-child(3) { width: 15%; text-align: center; }
+        .match-grid-table th:nth-child(4) { width: 35%; text-align: right; }
+
+        .match-grid-table td {
+            padding: 10px; border-bottom: 1px solid var(--border-color); vertical-align: top;
+        }
+        .match-grid-table tr:hover { background: rgba(255, 255, 255, 0.02); }
+        .match-grid-table tr.germany-row {
+            background: linear-gradient(90deg, rgba(221, 0, 0, 0.12), rgba(255, 204, 0, 0.12));
+            border-left: 3px solid var(--accent-gold);
         }
 
-        .goal-diff-pos { color: var(--success-color); font-weight: bold; }
+        .team-cell { display: flex; align-items: center; gap: 6px; font-weight: bold; color: #fff; font-size: 0.85rem; }
+        .team-flag { width: 18px; height: 12px; object-fit: cover; border-radius: 2px; border: 1px solid rgba(255,255,255,0.2); background: #222; }
+        
+        .match-events { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4; text-align: right; }
+        .match-events.right { text-align: left; }
+
+        .score-cell { text-align: center; white-space: nowrap; vertical-align: middle !important; }
+        .match-score {
+            font-weight: 800; font-size: 1rem; color: #fff;
+            background: #2a2a2a; padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border-color); display: inline-block;
+        }
+        .match-status { font-size: 0.6rem; margin-top: 2px; font-weight: bold; }
+
+        /* Klassische Tabellen */
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: 5px; border: 1px solid var(--border-color); margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 550px; }
+        th, td { padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--text-muted); font-weight: normal; background: #121212; font-size: 0.7rem; text-transform: uppercase; }
+        th:nth-child(2), td:nth-child(2) { text-align: left; }
+        tr.germany-row-table { background: linear-gradient(90deg, rgba(221, 0, 0, 0.12), rgba(255, 204, 0, 0.12)); border-left: 3px solid var(--accent-gold); font-weight: bold; }
+        .goal-diff-pos { color: #81c784; font-weight: bold; }
         .goal-diff-neg { color: #ff5252; font-weight: bold; }
 
-        .matches-section {
-            margin-bottom: 25px;
-        }
-
-        .match-card {
-            background: #1f1f1f;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 10px 15px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.85rem;
-        }
-
-        .match-card.germany-match {
-            border: 1px solid var(--accent-gold);
-            background: linear-gradient(90deg, #1f1f1f, rgba(255, 204, 0, 0.08));
-        }
-
-        .match-teams {
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .team-flag {
-            width: 18px;
-            height: 13px;
-            object-fit: cover;
-            border-radius: 2px;
-            border: 1px solid rgba(255,255,255,0.2);
-            vertical-align: middle;
-        }
-
-        .match-scorers {
-            font-size: 0.75rem;
-            color: var(--accent-gold);
-            margin-top: 2px;
-            font-style: italic;
-        }
-
-        .match-score {
-            font-weight: bold;
-            background: #2a2a2a;
-            padding: 3px 10px;
-            border-radius: 4px;
-            color: var(--accent-gold);
-            cursor: pointer;
-        }
-        .match-score:hover {
-            background: var(--accent-gold);
-            color: #000;
-        }
-
-        .match-info {
-            font-size: 0.75rem;
-            color: var(--text-muted);
+        /* ADMIN & PUSH STILE */
+        .admin-toggle-wrapper {
             text-align: right;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            justify-content: center; align-items: center;
-            z-index: 99;
-        }
-        .modal-content {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 10px;
-            width: 100%; max-width: 520px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .modal input, .modal select, .modal textarea {
-            width: 100%; padding: 8px; margin-bottom: 10px;
-            background: #2a2a2a; border: 1px solid var(--border-color); color: #fff; border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        /* Kader-Listendesign */
-        .kader-position-title {
-            font-size: 0.9rem;
-            color: var(--accent-gold);
-            text-align: left;
             margin-top: 15px;
-            margin-bottom: 6px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 3px;
-            text-transform: uppercase;
         }
-
-        .kader-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #1f1f1f;
-            padding: 6px 10px;
-            border-radius: 4px;
-            margin-bottom: 4px;
-            font-size: 0.85rem;
-            border: 1px solid rgba(255,255,255,0.03);
-        }
-
-        .kader-player-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-align: left;
-        }
-
-        .kader-number {
-            background: #2a2a2a;
-            color: var(--accent-gold);
-            font-weight: bold;
-            width: 26px;
-            height: 26px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            border: 1px solid var(--border-color);
-        }
-
-        .kader-name {
-            font-weight: 500;
-            color: #fff;
-        }
-
-        .kader-bday {
-            font-size: 0.7rem;
+        .admin-toggle-btn {
+            background: transparent;
+            border: 1px dashed var(--border-color);
             color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-
-        .kader-team {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.8rem;
-            color: var(--text-color);
+        .admin-toggle-btn:hover {
+            color: var(--accent-gold);
+            border-color: var(--accent-red);
         }
-
-        /* Farb-Klassen für Ergebnis und Deutschland im Modal */
-        .badge-win { background-color: var(--success-color) !important; color: #fff !important; }
-        .badge-draw { background-color: var(--draw-color) !important; color: #000 !important; }
-        .badge-loss { background-color: var(--loss-color) !important; color: #fff !important; }
-        .badge-future { background: #2a2a2a; color: var(--accent-gold); border: 1px solid var(--border-color); }
-
-        .team-highlight-win { background-color: var(--success-color); color: #fff; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; }
-        .team-highlight-draw { background-color: var(--draw-color); color: #000; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; }
-        .team-highlight-loss { background-color: var(--loss-color); color: #fff; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; }
-
-        @media (max-width: 600px) {
-            .ger-stats-grid { grid-template-columns: repeat(3, 1fr); }
+        .admin-card {
+            background: #080709;
+            border: 1px solid var(--accent-red);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
         }
+        .btn {
+            background: var(--accent-red);
+            color: #ffffff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #b50000; }
     </style>
 </head>
-<body>
+<body class="p-2 md:p-6 font-sans min-h-screen">
 
-<div class="container">
-    <div class="loading-overlay" id="loadingOverlay">Lade Daten...</div>
-
-    <img src="https://lhusylpjnujlqomougmg.supabase.co/storage/v1/object/public/vereinslogos/nationalmannschaft.png" alt="Nationalmannschaft Banner" class="app-banner">
-
-    <header>
-        <div class="app-title-area">
-            <div class="app-title">UEFA Nations League</div>
-            <div class="subtitle">Tabellen & Spielplan</div>
+    <div class="container">
+        
+        <!-- DEUTSCHLAND FLAGGEN BANNER GANZ OBEN -->
+        <div class="germany-banner">
+            <div class="banner-black"></div>
+            <div class="banner-red"></div>
+            <div class="banner-gold"></div>
         </div>
-        <button class="admin-btn" onclick="toggleAdmin()">Admin: <span id="adminStatus">Aus</span></button>
-    </header>
 
-    <!-- DFB Statistik-Kachel mit Jürgen Klopp -->
-    <div class="ger-stats-card" id="gerStatsCard">
-        <div class="ger-stats-header">
-            <div class="bundestrainer-info">
-                <img src="https://lhusylpjnujlqomougmg.supabase.co/storage/v1/object/public/vereinslogos/kloppo.png" alt="Jürgen Klopp" class="bundestrainer-img">
-                <div class="bundestrainer-text">
-                    <span class="bundestrainer-label">Bundestrainer</span>
-                    <span class="bundestrainer-name">Jürgen Klopp</span>
+        <!-- HEADER -->
+        <header>
+            <div>
+                <div class="app-title">UEFA Nations League</div>
+                <div class="subtitle">Spielplan, Live-Scores & Tabellen im Profi-Design</div>
+            </div>
+            
+            <div class="header-actions">
+                <button class="action-btn" onclick="requestPushPermission()">🔔 Push-Alarm</button>
+                <div id="live-indicator" class="live-badge">
+                    <span class="live-dot"></span> LIVE LÄUFT
+                </div>
+                
+                <select id="timeframe-select" onchange="onTimeframeChange()" class="select-box">
+                    <option value="current">📅 Aktueller Spieltag / Standard</option>
+                    <option value="next7">⏭️ Nächste 7 Tage</option>
+                    <option value="prev7">⏮️ Vergangene 7 Tage</option>
+                    <option value="single">📆 Einzelnes Datum...</option>
+                </select>
+
+                <div id="single-date-wrapper" style="display: none;">
+                    <input type="date" id="single-date-input" onchange="onSingleDateChange()" class="select-box">
+                </div>
+
+                <button onclick="refreshAllData()" class="action-btn">🔄</button>
+            </div>
+        </header>
+
+        <!-- DFB-KACHEL DIREKT UNTER DER ÜBERSCHRIFT -->
+        <div class="dfb-hero-card">
+            <div class="dfb-hero-top">
+                <div class="dfb-coach-info">
+                    <img src="https://lhusylpjnujlqomougmg.supabase.co/storage/v1/object/public/vereinslogos/kloppo.png" alt="Jürgen Klopp" class="dfb-coach-avatar">
+                    <div>
+                        <div class="dfb-coach-title">Bundestrainer</div>
+                        <div class="dfb-coach-name">Jürgen Klopp</div>
+                    </div>
+                </div>
+                <div id="dfb-rank-display" class="dfb-rank-badge">Platz -</div>
+            </div>
+
+            <div class="dfb-stats-grid">
+                <div class="dfb-stat-box">
+                    <div id="dfb-stat-played" class="dfb-stat-value">-</div>
+                    <div class="dfb-stat-label">Spiele</div>
+                </div>
+                <div class="dfb-stat-box">
+                    <div id="dfb-stat-form" class="dfb-stat-value">-</div>
+                    <div class="dfb-stat-label">S / U / N</div>
+                </div>
+                <div class="dfb-stat-box">
+                    <div id="dfb-stat-goals" class="dfb-stat-value">-</div>
+                    <div class="dfb-stat-label">Tore</div>
+                </div>
+                <div class="dfb-stat-box">
+                    <div id="dfb-stat-diff" class="dfb-stat-value">-</div>
+                    <div class="dfb-stat-label">Diff.</div>
+                </div>
+                <div class="dfb-stat-box highlight">
+                    <div id="dfb-stat-points" class="dfb-stat-value">-</div>
+                    <div class="dfb-stat-label">Punkte</div>
                 </div>
             </div>
-            <span id="gerRankDisplay" style="font-size: 0.8rem; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 4px; color: var(--accent-gold);">Platz -</span>
         </div>
-        <div class="ger-stats-grid">
-            <div class="ger-stat-box">
-                <div class="ger-stat-value" id="gerStatGP">0</div>
-                <div class="ger-stat-label">Spiele</div>
-            </div>
-            <div class="ger-stat-box">
-                <div class="ger-stat-value" id="gerStatWDL">0-0-0</div>
-                <div class="ger-stat-label">S / U / N</div>
-            </div>
-            <div class="ger-stat-box">
-                <div class="ger-stat-value" id="gerStatGoals">0:0</div>
-                <div class="ger-stat-label">Tore</div>
-            </div>
-            <div class="ger-stat-box">
-                <div class="ger-stat-value" id="gerStatGD">0</div>
-                <div class="ger-stat-label">Diff.</div>
-            </div>
-            <div class="ger-stat-box" style="border-color: var(--accent-gold);">
-                <div class="ger-stat-value" id="gerStatPts" style="color: var(--accent-gold);">0</div>
-                <div class="ger-stat-label">Punkte</div>
-            </div>
-        </div>
-        <div class="ger-stats-actions">
-            <button class="ger-action-btn" onclick="openGerMatchesModal()">⚽ DFB-Spiele</button>
-            <button class="ger-action-btn" onclick="openGerScorersModal()">🎯 Torschützen</button>
-            <button class="ger-action-btn" onclick="openKaderModal()">👥 Kader</button>
-        </div>
-    </div>
 
-    <!-- Spielplan zum Durchklicken -->
-    <div class="matches-section">
-        <div class="matchday-nav">
-            <button class="nav-arrow" onclick="changeMatchday(-1)">❮ Vorheriger</button>
-            <div class="nav-title" id="matchdayTitle">1. Spieltag</div>
-            <button class="nav-arrow" onclick="changeMatchday(1)">Nächster ❯</button>
-        </div>
-        <div id="matchesContainer"></div>
-    </div>
-
-    <!-- Tabellen darunter -->
-    <div id="standingsContainer"></div>
-</div>
-
-<!-- Modal: Spiel bearbeiten -->
-<div class="modal" id="editModal">
-    <div class="modal-content" style="max-width: 450px;">
-        <h3 id="modalTitle" style="margin-bottom: 15px; color: var(--accent-gold);">Spiel bearbeiten</h3>
-        <input type="hidden" id="editMatchId">
-        
-        <div style="display: flex; gap: 10px;">
-            <div>
-                <div style="font-size: 0.8rem; margin-bottom: 3px; text-align: left; color: var(--text-muted);">Tore Heim:</div>
-                <input type="number" id="editToreHeim" min="0">
-            </div>
-            <div>
-                <div style="font-size: 0.8rem; margin-bottom: 3px; text-align: left; color: var(--text-muted);">Tore Gast:</div>
-                <input type="number" id="editToreGast" min="0">
+        <!-- SPIELTAGE LEISTE / FILTER -->
+        <div class="filter-bar">
+            <div class="filter-group">
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">Spieltag-Ansicht:</span>
+                <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">Alle Spiele</button>
+                <button class="filter-btn" id="filter-live" onclick="setFilter('live')">🔴 Live</button>
             </div>
         </div>
 
-        <div style="font-size: 0.8rem; margin-bottom: 3px; text-align: left; color: var(--text-muted);">Status:</div>
-        <select id="editStatus">
-            <option value="geplant">Geplant</option>
-            <option value="beendet">Beendet</option>
-        </select>
-
-        <div style="font-size: 0.8rem; margin-bottom: 3px; text-align: left; color: var(--text-muted);">Torschützen (z.B. Niederlande:Gakpo - Deutschland:F. Nmecha):</div>
-        <textarea id="editTorschuetzen" rows="2" placeholder="Torschützen eintragen..."></textarea>
-
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <button class="admin-btn" style="width: 100%; background: #444;" onclick="closeModal()">Abbrechen</button>
-            <button class="admin-btn" style="width: 100%; background: var(--success-color); color:#fff;" onclick="saveMatch()">Speichern</button>
+        <!-- SPIELPLAN CONTAINER -->
+        <div class="section-box">
+            <div id="games-container">
+                <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.8rem;">
+                    ⌛ Lade Nations League Spiele von ESPN...
+                </div>
+            </div>
         </div>
+
+        <!-- TABELLEN CONTAINER -->
+        <div class="section-box" style="margin-top: 20px;">
+            <div style="font-size: 0.9rem; font-weight: bold; color: var(--accent-gold); margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
+                📊 Gruppen & Tabellen (UEFA Nations League)
+            </div>
+            <div id="standings-container">
+                <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.8rem;">
+                    ⌛ Lade Tabellen...
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN BEREICH FÜR PUSH-TEST -->
+        <div class="admin-card" id="adminCard">
+            <div style="font-weight: bold; color: var(--accent-gold); margin-bottom: 12px; text-transform: uppercase; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+                <span>🔧 Push-Benachrichtigung testen</span>
+                <span style="font-size: 0.7rem; color: #3fb950;">● Admin-Modus Aktiv</span>
+            </div>
+            <button class="btn" style="background: #238636;" onclick="sendTestPush()">🚀 Test-Push Benachrichtigung senden</button>
+        </div>
+
+        <div class="admin-toggle-wrapper">
+            <button class="admin-toggle-btn" onclick="toggleAdminMode()">⚙️ Admin-Zugang</button>
+        </div>
+
     </div>
-</div>
 
-<!-- Modal: Alle DFB-Spiele -->
-<div class="modal" id="gerMatchesModal">
-    <div class="modal-content">
-        <h3 style="margin-bottom: 15px; color: var(--accent-gold);">Alle DFB-Spiele</h3>
-        <div id="gerMatchesList" style="display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 15px; max-height: 55vh; overflow-y: auto;"></div>
-        <button class="admin-btn" style="width: 100%; background: #444;" onclick="closeGerMatchesModal()">Schließen</button>
-    </div>
-</div>
+    <!-- SUPABASE CLIENT -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Modal: DFB-Torschützen -->
-<div class="modal" id="gerScorersModal">
-    <div class="modal-content" style="max-width: 420px;">
-        <h3 style="margin-bottom: 15px; color: var(--accent-gold);">🎯 DFB-Torschützenliste</h3>
-        <div id="gerScorersList" style="display: flex; flex-direction: column; gap: 6px; text-align: left; margin-bottom: 15px; max-height: 55vh; overflow-y: auto; font-size: 0.9rem;"></div>
-        <button class="admin-btn" style="width: 100%; background: #444;" onclick="closeGerScorersModal()">Schließen</button>
-    </div>
-</div>
+    <!-- JAVASCRIPT LOGIK -->
+    <script>
+        const SUPABASE_URL = 'https://lhusylpjnujlqomougmg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxodXN5bHBqbnVqbHFvbW91Z21nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwMzA0ODIsImV4cCI6MjEwNDYwNjQ4Mn0.9ugazAA5pEdy9uSaJQWa5BMb7EwSH9d-h5K8ln_PF5A';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-<!-- Modal: DFB-Kader -->
-<div class="modal" id="kaderModal">
-    <div class="modal-content">
-        <h3 style="margin-bottom: 15px; color: var(--accent-gold);">👥 Aktueller Kader</h3>
-        <div id="kaderList" style="display: flex; flex-direction: column; text-align: left; margin-bottom: 15px; max-height: 60vh; overflow-y: auto; padding-right: 4px;"></div>
-        <button class="admin-btn" style="width: 100%; background: #444;" onclick="closeKaderModal()">Schließen</button>
-    </div>
-</div>
+        const ADMIN_PIN = "1919";
+        let isAdmin = false;
 
-<script>
-    const SUPABASE_URL = 'https://lhusylpjnujlqomougmg.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_yXEueWILvAq-Vm2VfTuYyg_BIQeE1KK';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let leagueEvents = [];
+        let autoRefreshTimer = null;
+        let activeFilter = 'all';
 
-    let isAdmin = false;
-    let allMatches = [];
-    let matchdays = [];
-    let currentMatchdayIndex = 0;
+        const DEUTSCHE_NAMEN = {
+            "Germany": "Deutschland", "Netherlands": "Niederlande", "Greece": "Griechenland",
+            "Serbia": "Serbien", "France": "Frankreich", "Belgium": "Belgien",
+            "Italy": "Italien", "Turkey": "Türkei", "Spain": "Spanien",
+            "Croatia": "Kroatien", "Czechia": "Tschechien", "Czech Republic": "Tschechien",
+            "Norway": "Norwegen", "Denmark": "Dänemark", "England": "England", "Portugal": "Portugal", "Wales": "Wales", "Hungary": "Ungarn",
+            "Switzerland": "Schweiz", "Austria": "Österreich", "Poland": "Polen", "Ukraine": "Ukraine", "Sweden": "Schweden", "Scotland": "Schottland",
+            "Bosnia & Herzegovina": "Bosnien und Herzegowina", "Israel": "Israel", "Faroe Islands": "Färöer", "San Marino": "San Marino",
+            "Belarus": "Belarus", "Finland": "Finnland", "Estonia": "Estland", "Iceland": "Island", "Luxembourg": "Luxemburg",
+            "Bulgaria": "Bulgarien", "Moldova": "Moldau", "Slovakia": "Slowakei", "Slovenia": "Slovenien",
+            "North Macedonia": "Nordmazedonien", "Kazakhstan": "Kasachstan"
+        };
 
-    const GRUPPEN_TEAMS = {
-        "Gruppe 2": ["Deutschland", "Niederlande", "Griechenland", "Serbien"],
-        "Gruppe 1": ["Belgien", "Frankreich", "Türkei", "Italien"],
-        "Gruppe 3": ["Spanien", "Kroatien", "England", "Tschechien"],
-        "Gruppe 4": ["Norwegen", "Portugal", "Dänemark", "Wales"]
-    };
+        const FLAGGEN_CODES = {
+            "Germany": "de", "Netherlands": "nl", "Greece": "gr", "Serbia": "rs",
+            "Belgium": "be", "France": "fr", "Turkey": "tr", "Italy": "it",
+            "Spain": "es", "Croatia": "hr", "England": "gb-eng", "Czechia": "cz", "Czech Republic": "cz",
+            "Norway": "no", "Portugal": "pt", "Denmark": "dk", "Wales": "gb-wls", "Hungary": "hu",
+            "Switzerland": "ch", "Austria": "at", "Poland": "pl", "Ukraine": "ua", "Sweden": "se", "Scotland": "gb-sct",
+            "Bosnia & Herzegovina": "ba", "Israel": "il", "Faroe Islands": "fo", "San Marino": "sm",
+            "Belarus": "by", "Finland": "fi", "Estonia": "ee", "Iceland": "is", "Luxembourg": "lu",
+            "Bulgaria": "bg", "Moldova": "md", "Slovakia": "sk", "Slovenia": "si", "North Macedonia": "mk",
+            "Kazakhstan": "kz", "Albania": "al"
+        };
 
-    const FLAGGEN_CODES = {
-        "Deutschland": "de",
-        "Niederlande": "nl",
-        "Griechenland": "gr",
-        "Serbien": "rs",
-        "Belgien": "be",
-        "Frankreich": "fr",
-        "Türkei": "tr",
-        "Italien": "it",
-        "Spanien": "es",
-        "Kroatien": "hr",
-        "England": "gb-eng",
-        "Tschechien": "cz",
-        "Norwegen": "no",
-        "Portugal": "pt",
-        "Dänemark": "dk",
-        "Wales": "gb-wls"
-    };
+        // --- PUSH DIENST FUNKTIONEN (ANGEPASST AN push_subscriptions_nations) ---
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
 
-    // Vereinsflaggen (Länderzuordnung anhand des Vereinslandes)
-    const VEREINS_FLAGGEN = {
-        "Eintracht Frankfurt": "de",
-        "FC Augsburg": "de",
-        "Besiktas Istanbul": "tr",
-        "Ajax Amsterdam": "nl",
-        "FC Bayern München": "de",
-        "Borussia Dortmund": "de",
-        "RB Leipzig": "de",
-        "Inter Mailand": "it",
-        "VfB Stuttgart": "de",
-        "SC Freiburg": "de",
-        "Newcastle United": "gb-eng",
-        "FC Barcelona": "es",
-        "FSV Mainz 05": "de",
-        "Celtic Glasgow": "gb-sct",
-        "TSG Hoffenheim": "de",
-        "FC Köln": "de",
-        "FC Brentford": "gb-eng",
-        "SV Elversberg": "de",
-        "Leeds United": "gb-eng",
-        "FC Liverpool": "gb-eng",
-        "FC Arsenal": "gb-eng",
-        "Juventus Turin": "it"
-    };
+        async function requestPushPermission() {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                alert("Push-Benachrichtigungen werden von diesem Browser leider nicht unterstützt.");
+                return;
+            }
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    alert("Die Berechtigung für Benachrichtigungen wurde verweigert.");
+                    return;
+                }
+                const registration = await navigator.serviceWorker.register('./sw.js');
+                await registration.ready;
 
-    const DFB_KADER = [
-        { pos: "Tor", nr: "2", name: "Noah Atubolu", bday: "25.05.2002", verein: "Eintracht Frankfurt" },
-        { pos: "Tor", nr: "1", name: "Finn Dahmen", bday: "27.03.1998", verein: "FC Augsburg" },
-        { pos: "Tor", nr: "21", name: "Alexander Nübel", bday: "30.09.1996", verein: "Besiktas Istanbul" },
-        { pos: "Tor", nr: "1", name: "Marc-André ter Stegen", bday: "30.04.1992", verein: "Ajax Amsterdam" },
-        { pos: "Tor", nr: "-", name: "Jonas Urbig", bday: "08.08.2003", verein: "FC Bayern München" },
+                const publicVapidKey = 'BAsnfWgySLti5LzulXfN-xI-x7UDV32LO98YXgg1qdoRY1E1Tl05QPgCvOMgfwe80cSv_K7336-dhJTgBkHUI70';
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+                });
 
-        { pos: "Abwehr", nr: "-", name: "Waldemar Anton", bday: "20.07.1996", verein: "Borussia Dortmund" },
-        { pos: "Abwehr", nr: "-", name: "Ridle Baku", bday: "08.04.1998", verein: "RB Leipzig" },
-        { pos: "Abwehr", nr: "22", name: "Hennes Behrens", bday: "19.01.2005", verein: "FC Augsburg" },
-        { pos: "Abwehr", nr: "2", name: "Yann Aurel Bisseck", bday: "29.11.2000", verein: "Inter Mailand" },
-        { pos: "Abwehr", nr: "18", name: "Nathaniel Brown", bday: "16.06.2003", verein: "FC Bayern München" },
-        { pos: "Abwehr", nr: "-", name: "Finn Jeltsch", bday: "17.07.2006", verein: "VfB Stuttgart" },
-        { pos: "Abwehr", nr: "-", name: "Maximilian Mittelstädt", bday: "18.03.1997", verein: "VfB Stuttgart" },
-        { pos: "Abwehr", nr: "-", name: "David Raum", bday: "22.04.1998", verein: "RB Leipzig" },
-        { pos: "Abwehr", nr: "3", name: "Max Rosenfelder", bday: "10.02.2003", verein: "SC Freiburg" },
-        { pos: "Abwehr", nr: "15", name: "Nico Schlotterbeck", bday: "01.12.1999", verein: "Borussia Dortmund" },
-        { pos: "Abwehr", nr: "4", name: "Jonathan Tah", bday: "11.02.1996", verein: "FC Bayern München" },
-        { pos: "Abwehr", nr: "-", name: "Malick Thiaw", bday: "08.08.2001", verein: "Newcastle United" },
-        { pos: "Abwehr", nr: "13", name: "Philipp Treu", bday: "03.12.2000", verein: "SC Freiburg" },
-        { pos: "Abwehr", nr: "14", name: "Josha Vagnoman", bday: "11.12.2000", verein: "VfB Stuttgart" },
+                const p256dh = subscription.getKey('p256dh') ? btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh')))) : '';
+                const auth = subscription.getKey('auth') ? btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth')))) : '';
 
-        { pos: "Mittelfeld", nr: "19", name: "Karim Adeyemi", bday: "18.01.2002", verein: "FC Barcelona" },
-        { pos: "Mittelfeld", nr: "11", name: "Nadiem Amiri", bday: "27.10.1996", verein: "FSV Mainz 05" },
-        { pos: "Mittelfeld", nr: "-", name: "Mika Baur", bday: "09.07.2004", verein: "Celtic Glasgow" },
-        { pos: "Mittelfeld", nr: "-", name: "Tom Bischof", bday: "28.06.2005", verein: "FC Bayern München" },
-        { pos: "Mittelfeld", nr: "-", name: "Bambasé Conté", bday: "07.07.2003", verein: "TSG Hoffenheim" },
-        { pos: "Mittelfeld", nr: "-", name: "Said El Mala", bday: "26.08.2006", verein: "FC Köln" },
-        { pos: "Mittelfeld", nr: "5", name: "Yannik Engelhardt", bday: "07.02.2001", verein: "SC Freiburg" },
-        { pos: "Mittelfeld", nr: "17", name: "Chris Führich", bday: "09.01.1998", verein: "VfB Stuttgart" },
-        { pos: "Mittelfeld", nr: "20", name: "Serge Gnabry", bday: "14.07.1995", verein: "FC Bayern München" },
-        { pos: "Mittelfeld", nr: "-", name: "Brajan Gruda", bday: "31.05.2004", verein: "RB Leipzig" },
-        { pos: "Mittelfeld", nr: "-", name: "Vitaly Janelt", bday: "10.05.1998", verein: "FC Brentford" },
-        { pos: "Mittelfeld", nr: "-", name: "Lennart Karl", bday: "22.02.2008", verein: "FC Bayern München" },
-        { pos: "Mittelfeld", nr: "-", name: "Felix Keidel", bday: "14.06.2003", verein: "SV Elversberg" },
-        { pos: "Mittelfeld", nr: "6", name: "Joshua Kimmich", bday: "08.02.1995", verein: "FC Bayern München" },
-        { pos: "Mittelfeld", nr: "10", name: "Jamal Musiala", bday: "26.02.2003", verein: "FC Bayern München" },
-        { pos: "Mittelfeld", nr: "8", name: "Felix Nmecha", bday: "10.10.2000", verein: "Borussia Dortmund" },
-        { pos: "Mittelfeld", nr: "-", name: "Aleksandar Pavlović", bday: "03.05.2004", verein: "FC Bayern München" },
-        { pos: "Mittelfeld", nr: "9", name: "Kevin Schade", bday: "27.11.2001", verein: "FC Brentford" },
-        { pos: "Mittelfeld", nr: "-", name: "Derry Scherhant", bday: "10.11.2002", verein: "SC Freiburg" },
-        { pos: "Mittelfeld", nr: "16", name: "Anton Stach", bday: "15.11.1998", verein: "Leeds United" },
-        { pos: "Mittelfeld", nr: "-", name: "Florian Wirtz", bday: "03.05.2003", verein: "FC Liverpool" },
+                await supabaseClient.from('push_subscriptions_nations').upsert({
+                    endpoint: subscription.endpoint,
+                    p256dh: p256dh,
+                    auth: auth
+                }, { onConflict: 'endpoint' });
 
-        { pos: "Angriff", nr: "-", name: "Jonathan Burkardt", bday: "11.07.2000", verein: "Eintracht Frankfurt" },
-        { pos: "Angriff", nr: "23", name: "Younes Ebnoutalib", bday: "13.09.2003", verein: "Eintracht Frankfurt" },
-        { pos: "Angriff", nr: "7", name: "Kai Havertz", bday: "11.06.1999", verein: "FC Arsenal" },
-        { pos: "Angriff", nr: "-", name: "Nick Woltemade", bday: "14.02.2002", verein: "Juventus Turin" }
-    ];
+                alert("Push-Alarm für die UEFA Nations League erfolgreich aktiviert!");
+            } catch (error) {
+                console.error('Fehler bei der Push-Registrierung:', error);
+                alert("Fehler beim Aktivieren der Benachrichtigung: " + error.message);
+            }
+        }
 
-    function getTeamWithFlag(teamName) {
-        let code = FLAGGEN_CODES[teamName] || "un";
-        let flagImg = `<img src="https://flagcdn.com/20x15/${code}.png" alt="${teamName}" class="team-flag">`;
-        return `${flagImg} ${teamName}`;
-    }
+        async function sendTestPush() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: 'push_subscriptions_nations',
+                        title: "🔴 DFB Test-Tor-Alarm",
+                        body: "Das Test-Tor für die deutsche Nationalmannschaft wurde erfolgreich ausgelöst!"
+                    })
+                });
+                if (response.ok) alert("Test-Push für Nations League erfolgreich ausgelöst!");
+                else alert("Fehler von der Edge Function.");
+            } catch (e) {
+                alert("Netzwerkfehler: " + e.message);
+            }
+        }
 
-    window.onload = function() {
-        loadNationsLeagueData();
-        renderKaderList();
-    };
-
-    function toggleAdmin() {
-        if (!isAdmin) {
-            let pin = prompt("Admin-PIN eingeben:");
-            if (pin === "1919") {
+        function toggleAdminMode() {
+            const adminCard = document.getElementById('adminCard');
+            if (isAdmin) {
+                isAdmin = false;
+                adminCard.style.display = 'none';
+                return;
+            }
+            let enteredPin = prompt("Bitte Admin-PIN eingeben:");
+            if (enteredPin === ADMIN_PIN) {
                 isAdmin = true;
-                document.getElementById('adminStatus').innerText = "Ein";
-                alert("Admin-Modus aktiviert! Klicke auf ein Ergebnis, um Tore und Torschützen zu bearbeiten.");
-            } else {
+                adminCard.style.display = 'block';
+                alert("Admin-Modus erfolgreich aktiviert!");
+            } else if (enteredPin !== null) {
                 alert("Falsche PIN!");
             }
-        } else {
-            isAdmin = false;
-            document.getElementById('adminStatus').innerText = "Aus";
         }
-        renderMatches();
-    }
+        // -------------------------------------------------------------------
 
-    async function loadNationsLeagueData() {
-        document.getElementById('loadingOverlay').style.display = 'flex';
-        try {
-            let { data: spiele, error } = await supabaseClient
-                .from('nations_league_spiele')
-                .select('*');
+        function normalizeTeamName(name) {
+            if (name === "Czech Republic") return "Czechia";
+            return name;
+        }
 
-            if (error) throw error;
-            allMatches = spiele;
-
-            let gefilterteSpiele = spiele.filter(s => s.gruppe.startsWith('Gruppe'));
-            matchdays = [...new Set(gefilterteSpiele.map(s => s.spiel_datum))].sort();
-
-            let foundIndex = matchdays.findIndex(datum => {
-                let spieleAmTag = allMatches.filter(s => s.spiel_datum === datum);
-                return spieleAmTag.some(s => s.status !== 'beendet');
-            });
+        function getTeamDisplay(teamObj) {
+            if (!teamObj) return { name: "Unbekannt", flag: "", raw: "" };
+            let rawName = teamObj.displayName || teamObj.name || teamObj.shortDisplayName || "Unbekannt";
+            let norm = normalizeTeamName(rawName);
+            let displayName = DEUTSCHE_NAMEN[norm] || rawName;
             
-            if (foundIndex !== -1) {
-                currentMatchdayIndex = foundIndex;
+            let flagCode = FLAGGEN_CODES[norm] || FLAGGEN_CODES[rawName];
+            let logoUrl = teamObj.logo || (teamObj.logos && teamObj.logos[0]?.href);
+
+            let flagImg = "";
+            if (flagCode) {
+                flagImg = `<img src="https://flagcdn.com/16x12/${flagCode}.png" alt="${displayName}" class="team-flag" onerror="this.onerror=null; this.src='${logoUrl || ''}';">`;
+            } else if (logoUrl) {
+                flagImg = `<img src="${logoUrl}" alt="${displayName}" class="team-flag">`;
             }
 
-            renderStandings(spiele);
-            renderMatches();
-        } catch (err) {
-            console.error("Fehler beim Laden:", err);
-        } finally {
-            document.getElementById('loadingOverlay').style.display = 'none';
+            return { name: displayName, flag: flagImg, raw: norm, id: teamObj.id };
         }
-    }
 
-    function changeMatchday(direction) {
-        currentMatchdayIndex += direction;
-        if (currentMatchdayIndex < 0) currentMatchdayIndex = matchdays.length - 1;
-        if (currentMatchdayIndex >= matchdays.length) currentMatchdayIndex = 0;
-        renderMatches();
-    }
+        function setFilter(filterType) {
+            activeFilter = filterType;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`filter-${filterType}`);
+            if (activeBtn) activeBtn.classList.add('active');
 
-    function renderMatches() {
-        const container = document.getElementById('matchesContainer');
-        container.innerHTML = '';
+            if (filterType === 'all') {
+                loadGames();
+            } else {
+                renderGroupedGames();
+            }
+        }
 
-        if (matchdays.length === 0) return;
+        function onTimeframeChange() {
+            const mode = document.getElementById("timeframe-select").value;
+            const dateWrapper = document.getElementById("single-date-wrapper");
 
-        let currentDatum = matchdays[currentMatchdayIndex];
-        let spieltagNummer = currentMatchdayIndex + 1;
+            localStorage.setItem("nations_timeframe", mode);
 
-        document.getElementById('matchdayTitle').innerText = `${spieltagNummer}. Spieltag (${currentDatum})`;
-
-        let spieleAmTag = allMatches.filter(s => s.spiel_datum === currentDatum);
-
-        spieleAmTag.sort((a, b) => {
-            let aIsGer = a.heimteam === 'Deutschland' || a.gastteam === 'Deutschland';
-            let bIsGer = b.heimteam === 'Deutschland' || b.gastteam === 'Deutschland';
-            if (aIsGer && !bIsGer) return -1;
-            if (!aIsGer && bIsGer) return 1;
-            return 0;
-        });
-
-        spieleAmTag.forEach(spiel => {
-            let scoreText = spiel.status === 'beendet' ? `${spiel.tore_heim} : ${spiel.tore_gast}` : `${spiel.spiel_zeit}`;
-            let isGermany = spiel.heimteam === 'Deutschland' || spiel.gastteam === 'Deutschland';
-            let cardClass = isGermany ? 'match-card germany-match' : 'match-card';
-            
-            let card = document.createElement('div');
-            card.className = cardClass;
-            
-            let clickAction = isAdmin ? `onclick="openEditModal(${spiel.id})"` : '';
-            let titleAttr = isAdmin ? `title="Klicken zum Bearbeiten"` : '';
-            let torschuetzenHtml = spiel.torschuetzen ? `<div class="match-scorers">⚽ ${spiel.torschuetzen}</div>` : '';
-
-            let heimName = getTeamWithFlag(spiel.heimteam);
-            let gastName = getTeamWithFlag(spiel.gastteam);
-
-            card.innerHTML = `
-                <div>
-                    <div style="font-size: 0.7rem; color: var(--accent-gold); margin-bottom: 2px;">${spiel.gruppe}</div>
-                    <div class="match-teams">${heimName} vs. ${gastName}</div>
-                    ${torschuetzenHtml}
-                </div>
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div class="match-score" ${clickAction} ${titleAttr}>${scoreText} ${isAdmin ? '✏️' : ''}</div>
-                    <div class="match-info">${spiel.spiel_datum}<br>${spiel.status === 'beendet' ? 'Beendet' : 'Geplant'}</div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    function renderStandings(spiele) {
-        const container = document.getElementById('standingsContainer');
-        container.innerHTML = '';
-
-        Object.keys(GRUPPEN_TEAMS).forEach(gruppeName => {
-            let teams = GRUPPEN_TEAMS[gruppeName];
-            let stats = {};
-            teams.forEach(t => {
-                stats[t] = { name: t, gp: 0, w: 0, d: 0, l: 0, f: 0, a: 0, gd: 0, p: 0 };
-            });
-
-            spiele.forEach(spiel => {
-                if (spiel.gruppe === gruppeName && spiel.status === 'beendet') {
-                    let heim = spiel.heimteam;
-                    let gast = spiel.gastteam;
-                    let toreH = spiel.tore_heim;
-                    let toreG = spiel.tore_gast;
-
-                    if (stats[heim]) { stats[heim].gp++; stats[heim].f += toreH; stats[heim].a += toreG; }
-                    if (stats[gast]) { stats[gast].gp++; stats[gast].f += toreG; stats[gast].a += toreH; }
-
-                    if (toreH > toreG) {
-                        if (stats[heim]) { stats[heim].w++; stats[heim].p += 3; }
-                        if (stats[gast]) { stats[gast].l++; }
-                    } else if (toreH < toreG) {
-                        if (stats[gast]) { stats[gast].w++; stats[gast].p += 3; }
-                        if (stats[heim]) { stats[heim].l++; }
-                    } else {
-                        if (stats[heim]) { stats[heim].d++; stats[heim].p += 1; }
-                        if (stats[gast]) { stats[gast].d++; stats[gast].p += 1; }
-                    }
+            if (mode === 'single') {
+                dateWrapper.style.display = "inline-block";
+                if (!document.getElementById("single-date-input").value) {
+                    let savedDate = localStorage.getItem("nations_single_date") || new Date().toISOString().split('T')[0];
+                    document.getElementById("single-date-input").value = savedDate;
                 }
-            });
+            } else {
+                dateWrapper.style.display = "none";
+            }
+            loadGames();
+        }
 
-            let sortedTeams = Object.values(stats).map(t => {
-                t.gd = t.f - t.a;
-                return t;
-            }).sort((a, b) => {
-                if (b.p !== a.p) return b.p - a.p;
-                if (b.gd !== a.gd) return b.gd - a.gd;
-                return b.f - a.f;
-            });
+        function onSingleDateChange() {
+            const val = document.getElementById("single-date-input").value;
+            if (val) {
+                localStorage.setItem("nations_single_date", val);
+            }
+            loadGames();
+        }
 
-            if (gruppeName === "Gruppe 2") {
-                let gerIdx = sortedTeams.findIndex(t => t.name === "Deutschland");
-                if (gerIdx !== -1) {
-                    let ger = sortedTeams[gerIdx];
-                    document.getElementById('gerRankDisplay').innerText = `Platz ${gerIdx + 1}`;
-                    document.getElementById('gerStatGP').innerText = ger.gp;
-                    document.getElementById('gerStatWDL').innerText = `${ger.w}-${ger.d}-${ger.l}`;
-                    document.getElementById('gerStatGoals').innerText = `${ger.f}:${ger.a}`;
-                    document.getElementById('gerStatGD').innerText = ger.gd > 0 ? `+${ger.gd}` : ger.gd;
-                    document.getElementById('gerStatPts').innerText = ger.p;
+        async function refreshAllData() {
+            loadGames();
+            await loadStandings();
+        }
+
+        function formatDateKey(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}${m}${d}`;
+        }
+
+        async function loadGames() {
+            const container = document.getElementById("games-container");
+            container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.8rem;">⌛ Lade Nations League Spiele von ESPN...</div>`;
+
+            const mode = document.getElementById("timeframe-select").value;
+            let url = `https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard`;
+            let datesToFetch = [];
+            let baseDate = new Date();
+
+            if (mode === 'current') {
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    let rawEvents = data.events || [];
+                    leagueEvents = await enrichEventsWithDetails(rawEvents);
+                    leagueEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    checkLiveState();
+                    renderGroupedGames();
+                    return;
+                } catch (e) {
+                    console.error("Standard-Abruf fehlgeschlagen:", e);
                 }
             }
 
-            let html = `
-                <h2 class="group-title">${gruppeName}</h2>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 30px;">#</th>
-                                <th style="text-align: left;">Team</th>
-                                <th>GP</th><th>W</th><th>D</th><th>L</th><th>F</th><th>A</th><th>GD</th><th>P</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
-            sortedTeams.forEach((team, idx) => {
-                let gdFormatted = team.gd > 0 ? `+${team.gd}` : team.gd;
-                let gdClass = team.gd > 0 ? 'goal-diff-pos' : (team.gd < 0 ? 'goal-diff-neg' : '');
-                let rowClass = team.name === 'Deutschland' ? 'germany-row' : '';
-                let teamDisplay = getTeamWithFlag(team.name);
-
-                html += `
-                    <tr class="${rowClass}">
-                        <td>${idx + 1}</td>
-                        <td style="text-align: left; font-weight: 500;">${teamDisplay}</td>
-                        <td>${team.gp}</td><td>${team.w}</td><td>${team.d}</td><td>${team.l}</td>
-                        <td>${team.f}</td><td>${team.a}</td>
-                        <td class="${gdClass}">${gdFormatted}</td>
-                        <td style="font-weight: bold; color: var(--accent-gold);">${team.p}</td>
-                    </tr>
-                `;
-            });
-
-            html += `</tbody></table></div>`;
-            container.innerHTML += html;
-        });
-    }
-
-    // Kader-Liste aufbauen
-    function renderKaderList() {
-        const kaderContainer = document.getElementById('kaderList');
-        kaderContainer.innerHTML = '';
-
-        const positionen = ["Tor", "Abwehr", "Mittelfeld", "Angriff"];
-
-        positionen.forEach(pos => {
-            let spielerDerPos = DFB_KADER.filter(p => p.pos === pos);
-            if (spielerDerPos.length === 0) return;
-
-            let posHeader = document.createElement('div');
-            posHeader.className = 'kader-position-title';
-            posHeader.innerText = pos;
-            kaderContainer.appendChild(posHeader);
-
-            spielerDerPos.forEach(player => {
-                let vCode = VEREINS_FLAGGEN[player.verein] || "de";
-                let vFlag = `<img src="https://flagcdn.com/20x15/${vCode}.png" alt="${player.verein}" class="team-flag">`;
-                let numDisplay = player.nr !== "-" ? player.nr : "–";
-
-                let row = document.createElement('div');
-                row.className = 'kader-row';
-                row.innerHTML = `
-                    <div class="kader-player-info">
-                        <div class="kader-number">${numDisplay}</div>
-                        <div>
-                            <div class="kader-name">${player.name}</div>
-                            <div class="kader-bday">Geb. ${player.bday}</div>
-                        </div>
-                    </div>
-                    <div class="kader-team">
-                        ${vFlag} <span>${player.verein}</span>
-                    </div>
-                `;
-                kaderContainer.appendChild(row);
-            });
-        });
-    }
-
-    function openKaderModal() {
-        document.getElementById('kaderModal').style.display = 'flex';
-    }
-
-    function closeKaderModal() {
-        document.getElementById('kaderModal').style.display = 'none';
-    }
-
-    // Modal: Alle DFB-Spiele
-    function openGerMatchesModal() {
-        const listContainer = document.getElementById('gerMatchesList');
-        listContainer.innerHTML = '';
-
-        let gerSpiele = allMatches.filter(s => s.heimteam === 'Deutschland' || s.gastteam === 'Deutschland');
-
-        gerSpiele.sort((a, b) => {
-            if (a.status === 'beendet' && b.status !== 'beendet') return -1;
-            if (a.status !== 'beendet' && b.status === 'beendet') return 1;
-            return a.spiel_datum.localeCompare(b.spiel_datum);
-        });
-
-        gerSpiele.forEach(spiel => {
-            let isHome = spiel.heimteam === 'Deutschland';
-            let badgeClass = 'badge-future';
-            let teamHighlightClass = '';
-            let scoreText = spiel.status === 'beendet' ? `${spiel.tore_heim} : ${spiel.tore_gast}` : spiel.spiel_zeit;
-
-            if (spiel.status === 'beendet') {
-                let gerTore = isHome ? spiel.tore_heim : spiel.tore_gast;
-                let gegnerTore = isHome ? spiel.tore_gast : spiel.tore_heim;
-                if (gerTore > gegnerTore) {
-                    badgeClass = 'badge-win';
-                    teamHighlightClass = 'team-highlight-win';
-                } else if (gerTore < gegnerTore) {
-                    badgeClass = 'badge-loss';
-                    teamHighlightClass = 'team-highlight-loss';
+            if (mode === 'next7') {
+                for (let i = 0; i < 7; i++) {
+                    let d = new Date(baseDate);
+                    d.setDate(baseDate.getDate() + i);
+                    datesToFetch.push(formatDateKey(d));
+                }
+            } else if (mode === 'prev7') {
+                for (let i = 6; i >= 0; i--) {
+                    let d = new Date(baseDate);
+                    d.setDate(baseDate.getDate() - i);
+                    datesToFetch.push(formatDateKey(d));
+                }
+            } else if (mode === 'single') {
+                const val = document.getElementById("single-date-input").value;
+                if (val) {
+                    datesToFetch.push(val.replace(/-/g, ''));
                 } else {
-                    badgeClass = 'badge-draw';
-                    teamHighlightClass = 'team-highlight-draw';
+                    datesToFetch.push(formatDateKey(baseDate));
                 }
             }
 
-            let heimName = getTeamWithFlag(spiel.heimteam);
-            let gastName = getTeamWithFlag(spiel.gastteam);
+            try {
+                const promises = datesToFetch.map(dateStr => 
+                    fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard?dates=${dateStr}`)
+                        .then(res => res.json())
+                        .then(data => data.events || [])
+                        .catch(() => [])
+                );
 
-            let heimDisplay = isHome ? `<span class="${teamHighlightClass}">${heimName}</span>` : heimName;
-            let gastDisplay = !isHome ? `<span class="${teamHighlightClass}">${gastName}</span>` : gastName;
+                const results = await Promise.all(promises);
+                let rawList = results.flat();
+                
+                const eventMap = {};
+                rawList.forEach(e => {
+                    if (e && e.id) eventMap[e.id] = e;
+                });
 
-            let item = document.createElement('div');
-            item.style.cssText = "background: #1f1f1f; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); font-size: 0.85rem; margin-bottom: 6px;";
-            item.innerHTML = `
-                <div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted);">${spiel.spiel_datum}</div>
-                    <div style="font-weight: 500; font-size: 0.9rem; color: #fff; display: flex; align-items: center; gap: 6px;">${heimDisplay} vs. ${gastDisplay}</div>
-                </div>
-                <div class="${badgeClass}" style="font-weight: bold; padding: 5px 12px; border-radius: 4px; font-size: 0.9rem;">
-                    ${scoreText}
-                </div>
-            `;
-            listContainer.appendChild(item);
-        });
+                let uniqueRawEvents = Object.values(eventMap);
+                leagueEvents = await enrichEventsWithDetails(uniqueRawEvents);
+                leagueEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        document.getElementById('gerMatchesModal').style.display = 'flex';
-    }
-
-    function closeGerMatchesModal() {
-        document.getElementById('gerMatchesModal').style.display = 'none';
-    }
-
-    // Modal: DFB-Torschützenliste
-    function openGerScorersModal() {
-        const listContainer = document.getElementById('gerScorersList');
-        listContainer.innerHTML = '';
-
-        let gerSpiele = allMatches.filter(s => (s.heimteam === 'Deutschland' || s.gastteam === 'Deutschland') && s.torschuetzen && s.torschuetzen.trim() !== '');
-
-        let scorerCounts = {};
-
-        gerSpiele.forEach(spiel => {
-            let parts = spiel.torschuetzen.split(/[\n,-]+/);
-            
-            parts.forEach(part => {
-                let trimmed = part.trim();
-                if (trimmed.toLowerCase().includes('deutschland')) {
-                    let subParts = trimmed.split(':');
-                    if (subParts.length > 1) {
-                        let teamPart = subParts[0].trim().toLowerCase();
-                        if (teamPart.includes('deutschland')) {
-                            extractPlayer(subParts[1]);
-                        }
-                    }
-                } else if (!trimmed.toLowerCase().includes('niederlande') && 
-                           !trimmed.toLowerCase().includes('frankreich') && 
-                           !trimmed.toLowerCase().includes('ungarn') && 
-                           !trimmed.toLowerCase().includes('italien') && 
-                           !trimmed.toLowerCase().includes('spanien') && 
-                           !trimmed.toLowerCase().includes('türkei') && 
-                           !trimmed.toLowerCase().includes('griechenland') && 
-                           !trimmed.toLowerCase().includes('serbien') && 
-                           !trimmed.toLowerCase().includes('kroatien') && 
-                           !trimmed.toLowerCase().includes('england') && 
-                           !trimmed.toLowerCase().includes('tschechien') && 
-                           !trimmed.toLowerCase().includes('norwegen') && 
-                           !trimmed.toLowerCase().includes('portugal') && 
-                           !trimmed.toLowerCase().includes('dänemark') && 
-                           !trimmed.toLowerCase().includes('wales') && 
-                           !trimmed.toLowerCase().includes('belgien')) {
-                    extractPlayer(trimmed);
-                }
-            });
-        });
-
-        function extractPlayer(text) {
-            let clean = text.replace(/\s*\(.*?\)/g, '').trim();
-            clean = clean.replace(/^deutschland[:\s]*/i, '').trim();
-            if (clean && clean.length > 1) {
-                scorerCounts[clean] = (scorerCounts[clean] || 0) + 1;
+                checkLiveState();
+                renderGroupedGames();
+            } catch (error) {
+                console.error("Fehler beim Abrufen der Spieldaten:", error);
+                container.innerHTML = '<div style="text-align: center; padding: 15px; color: #ff5252; font-size: 0.8rem;">⚠️ Fehler beim Laden der Spieldaten.</div>';
             }
         }
 
-        let sortedScorers = Object.entries(scorerCounts).sort((a, b) => b[1] - a[1]);
+        async function enrichEventsWithDetails(events) {
+            const detailedPromises = events.map(async (event) => {
+                const gameId = event.id;
+                if (!gameId) return event;
+                try {
+                    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/summary?event=${gameId}`);
+                    const summaryData = await res.json();
+                    
+                    if (summaryData) {
+                        let allEvents = [];
+                        if (summaryData.details) allEvents = allEvents.concat(summaryData.details);
+                        if (summaryData.plays) allEvents = allEvents.concat(summaryData.plays);
+                        if (summaryData.keyEvents) allEvents = allEvents.concat(summaryData.keyEvents);
 
-        if (sortedScorers.length === 0) {
-            listContainer.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 20px;">Noch keine deutschen Torschützen erkannt.</div>`;
-        } else {
-            sortedScorers.forEach(([player, count], idx) => {
-                let row = document.createElement('div');
-                row.style.cssText = "background: #1f1f1f; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;";
-                row.innerHTML = `
-                    <div style="color: #fff; font-weight: 500;">${idx + 1}. ${player}</div>
-                    <div style="background: var(--accent-gold); color: #000; font-weight: bold; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">
-                        ${count} ${count === 1 ? 'Tor' : 'Tore'}
+                        event.competitions[0].allEvents = allEvents;
+
+                        const playerMap = {};
+                        if (summaryData.rosters) {
+                            summaryData.rosters.forEach(roster => {
+                                if (roster.roster) {
+                                    roster.roster.forEach(player => {
+                                        if (player.athlete) {
+                                            playerMap[player.athlete.id] = player.athlete.shortName || player.athlete.displayName;
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        event._playerMap = playerMap;
+                    }
+                } catch (err) {}
+                return event;
+            });
+            return await Promise.all(detailedPromises);
+        }
+
+        function checkLiveState() {
+            const isLive = leagueEvents.some(e => e.status?.type?.state === "in");
+            const liveIndicator = document.getElementById("live-indicator");
+
+            if (isLive) {
+                liveIndicator.style.display = "flex";
+                if (!autoRefreshTimer) {
+                    autoRefreshTimer = setInterval(refreshAllData, 15000);
+                }
+            } else {
+                liveIndicator.style.display = "none";
+                if (autoRefreshTimer) {
+                    clearInterval(autoRefreshTimer);
+                    autoRefreshTimer = null;
+                }
+            }
+        }
+
+        function renderGroupedGames() {
+            const container = document.getElementById("games-container");
+            container.innerHTML = "";
+
+            let filteredEvents = leagueEvents.filter(event => {
+                const isLive = event.status?.type?.state === "in";
+                if (activeFilter === 'live') {
+                    return isLive;
+                }
+                return true;
+            });
+
+            if (filteredEvents.length === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.8rem;">Keine Spiele für diesen Filter gefunden.</div>`;
+                return;
+            }
+
+            const groupedMap = {};
+            filteredEvents.forEach(event => {
+                const gameDate = new Date(event.date);
+                const dateKey = gameDate.toLocaleDateString("de-DE", { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+                if (!groupedMap[dateKey]) groupedMap[dateKey] = [];
+                groupedMap[dateKey].push(event);
+            });
+
+            Object.keys(groupedMap).forEach(dateHeader => {
+                const daySection = document.createElement("div");
+                daySection.style.marginBottom = "15px";
+
+                daySection.innerHTML = `
+                    <div style="font-size: 0.75rem; color: var(--accent-gold); font-weight: bold; margin-bottom: 6px; border-bottom: 1px solid var(--border-color); padding-bottom: 3px;">
+                        📅 ${dateHeader} (${groupedMap[dateHeader].length} Spiele)
+                    </div>
+                    <div class="match-table-container">
+                        <table class="match-grid-table">
+                            <thead>
+                                <tr>
+                                    <th>TERMIN</th>
+                                    <th>HEIMMANNSCHAFT</th>
+                                    <th style="text-align: center;">ERGEBNIS / STATUS</th>
+                                    <th style="text-align: right;">GASTMANNSCHAFT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-${dateHeader.replace(/[^a-zA-Z0-9]/g, '')}"></tbody>
+                        </table>
                     </div>
                 `;
-                listContainer.appendChild(row);
+
+                container.appendChild(daySection);
+                const tbody = daySection.querySelector(`#tbody-${dateHeader.replace(/[^a-zA-Z0-9]/g, '')}`);
+
+                groupedMap[dateHeader].forEach(event => {
+                    renderMatchRow(event, tbody);
+                });
             });
         }
 
-        document.getElementById('gerScorersModal').style.display = 'flex';
-    }
+        function renderMatchRow(event, tbody) {
+            const competition = event.competitions?.[0];
+            const competitors = competition?.competitors || [];
+            
+            const home = competitors.find(c => c.homeAway === "home") || competitors[0];
+            const away = competitors.find(c => c.homeAway === "away") || competitors[1];
 
-    function closeGerScorersModal() {
-        document.getElementById('gerScorersModal').style.display = 'none';
-    }
+            const homeInfo = getTeamDisplay(home?.team);
+            const awayInfo = getTeamDisplay(away?.team);
 
-    function openEditModal(matchId) {
-        let spiel = allMatches.find(s => s.id === matchId);
-        if (!spiel) return;
+            const status = event.status?.type;
+            const isLive = status?.state === "in";
+            const isCompleted = status?.completed;
 
-        document.getElementById('editMatchId').value = spiel.id;
-        document.getElementById('modalTitle').innerText = `${spiel.heimteam} vs. ${spiel.gastteam}`;
-        document.getElementById('editToreHeim').value = spiel.tore_heim;
-        document.getElementById('editToreGast').value = spiel.tore_gast;
-        document.getElementById('editStatus').value = spiel.status;
-        document.getElementById('editTorschuetzen').value = spiel.torschuetzen || '';
+            const gameDate = new Date(event.date);
+            const timeStr = gameDate.toLocaleTimeString("de-DE", { hour: '2-digit', minute: '2-digit' }) + " Uhr";
 
-        document.getElementById('editModal').style.display = 'flex';
-    }
+            let statusText = timeStr;
+            let statusColor = "var(--text-muted)";
+            if (isLive) {
+                statusText = "LIVE";
+                statusColor = "#f87171";
+            } else if (isCompleted) {
+                statusText = "(Endstand)";
+                statusColor = "#81c784";
+            }
 
-    function closeModal() {
-        document.getElementById('editModal').style.display = 'none';
-    }
+            let homeEventsList = [];
+            let awayEventsList = [];
+            let playerMap = event._playerMap || {};
+            let rawEventsArr = competition?.allEvents || competition?.details || [];
+            
+            rawEventsArr.forEach(item => {
+                let athlete = item.athlete || (item.participants && item.participants[0]?.athlete) || {};
+                let athleteId = athlete.id || (item.participants && item.participants[0]?.athlete?.id);
+                let playerName = (athleteId && playerMap[athleteId]) || athlete.displayName || athlete.shortName || athlete.name || '';
+                
+                if (!playerName && item.text) {
+                    let parts = item.text.split(' - ')[0].replace(/scored|yellow card|red card/gi, '').trim();
+                    if (parts.length > 1) playerName = parts;
+                }
+                if (!playerName) return;
 
-    async function saveMatch() {
-        let id = document.getElementById('editMatchId').value;
-        let tore_heim = parseInt(document.getElementById('editToreHeim').value) || 0;
-        let tore_gast = parseInt(document.getElementById('editToreGast').value) || 0;
-        let status = document.getElementById('editStatus').value;
-        let torschuetzen = document.getElementById('editTorschuetzen').value;
+                let minute = item.clock ? item.clock.displayValue : (item.minute ? item.minute + "'" : '');
+                let teamId = item.team?.id;
+                let isHomeTeam = teamId ? (teamId === home?.team?.id) : (item.homeAway === 'home');
 
-        document.getElementById('loadingOverlay').style.display = 'flex';
-        closeModal();
+                let isGoal = item.scoringPlay || item.goal || (item.type && item.type.text && item.type.text.toLowerCase().includes('goal'));
+                let isYellow = item.yellowCard || item.card === 'yellow' || (item.text && item.text.toLowerCase().includes('yellow card'));
+                let isRed = item.redCard || item.card === 'red' || (item.text && item.text.toLowerCase().includes('red card'));
 
-        let { error } = await supabaseClient
-            .from('nations_league_spiele')
-            .update({ tore_heim, tore_gast, status, torschuetzen })
-            .eq('id', id);
+                if (isGoal) {
+                    let text = `⚽ ${playerName} - ${minute}`;
+                    if (isHomeTeam) homeEventsList.push(text); else awayEventsList.push(text);
+                } else if (isYellow) {
+                    let text = `🟨 ${playerName} - ${minute}`;
+                    if (isHomeTeam) homeEventsList.push(text); else awayEventsList.push(text);
+                } else if (isRed) {
+                    let text = `🟥 ${playerName} - ${minute}`;
+                    if (isHomeTeam) homeEventsList.push(text); else awayEventsList.push(text);
+                }
+            });
 
-        if (error) {
-            alert("Fehler beim Speichern!");
-            console.error(error);
-        } else {
-            loadNationsLeagueData();
+            let homeEventsHtml = homeEventsList.length > 0 ? `<div class="match-events">${homeEventsList.join('<br>')}</div>` : '';
+            let awayEventsHtml = awayEventsList.length > 0 ? `<div class="match-events right">${awayEventsList.join('<br>')}</div>` : '';
+
+            const isGermanyMatch = homeInfo.raw === 'Germany' || awayInfo.raw === 'Germany' || homeInfo.raw === 'Deutschland' || awayInfo.raw === 'Deutschland';
+            const row = document.createElement("tr");
+            row.className = isGermanyMatch ? "germany-row" : "";
+
+            let scoreDisplay = (isCompleted || isLive) ? `${home?.score ?? '-'} : ${away?.score ?? '-'}` : timeStr;
+
+            row.innerHTML = `
+                <td style="font-size: 0.75rem; color: var(--accent-gold); font-weight: 500;">
+                    ${gameDate.toLocaleDateString("de-DE", { day: '2-digit', month: '2-digit' })}<br>${timeStr}
+                </td>
+                <td>
+                    <div class="team-cell" style="justify-content: flex-end;">${homeInfo.name} ${homeInfo.flag}</div>
+                    ${homeEventsHtml}
+                </td>
+                <td class="score-cell">
+                    <div class="match-score">${scoreDisplay}</div>
+                    <div class="match-status" style="color: ${statusColor};">${statusText}</div>
+                </td>
+                <td style="text-align: right;">
+                    <div class="team-cell">${awayInfo.flag} ${awayInfo.name}</div>
+                    ${awayEventsHtml}
+                </td>
+            `;
+            tbody.appendChild(row);
         }
-    }
-</script>
+
+        async function loadStandings() {
+            const url = "https://site.api.espn.com/apis/v2/sports/soccer/uefa.nations/standings";
+            const container = document.getElementById("standings-container");
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                container.innerHTML = "";
+                const groups = data.children || (data.standings ? [data] : []);
+
+                if (groups.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; padding: 15px; color: var(--text-muted); font-size: 0.8rem;">Keine Tabellendaten gefunden.</div>';
+                    return;
+                }
+
+                groups.forEach((groupNode, gIdx) => {
+                    const subGroups = groupNode.standings ? [groupNode] : (groupNode.children || []);
+
+                    subGroups.forEach((subNode, sIdx) => {
+                        const subName = subNode.name || `Gruppe ${gIdx + 1}`;
+                        const entries = subNode.standings?.entries || [];
+                        if (entries.length === 0) return;
+
+                        entries.forEach((entry, idx) => {
+                            let tInfo = getTeamDisplay(entry.team);
+                            if (tInfo.raw === 'Germany' || tInfo.raw === 'Deutschland') {
+                                const stats = entry.stats || [];
+                                const getStat = (name) => stats.find(s => s.name === name)?.displayValue || "0";
+                                
+                                document.getElementById("dfb-rank-display").innerText = `Platz ${idx + 1}`;
+                                document.getElementById("dfb-stat-played").innerText = getStat("gamesPlayed");
+                                document.getElementById("dfb-stat-form").innerText = `${getStat("wins")}-${getStat("ties")}-${getStat("losses")}`;
+                                document.getElementById("dfb-stat-goals").innerText = `${getStat("pointsFor")}:${getStat("pointsAgainst")}`;
+                                
+                                let diffVal = parseInt(getStat("pointDifferential"));
+                                document.getElementById("dfb-stat-diff").innerText = (diffVal > 0 ? "+" : "") + diffVal;
+                                document.getElementById("dfb-stat-points").innerText = getStat("points");
+                            }
+                        });
+
+                        const tableDiv = document.createElement("div");
+                        tableDiv.style.marginBottom = "15px";
+
+                        tableDiv.innerHTML = `
+                            <div style="font-weight: bold; color: var(--accent-gold); margin-bottom: 6px; font-size: 0.8rem;">🏆 ${groupNode.name ? groupNode.name + ' - ' : ''}${subName}</div>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 25px;">#</th>
+                                            <th style="text-align: left;">Team</th>
+                                            <th>SP</th><th>W</th><th>D</th><th>L</th><th>F</th><th>A</th><th>GD</th><th>P</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-standings-${gIdx}-${sIdx}"></tbody>
+                                </table>
+                            </div>
+                        `;
+
+                        container.appendChild(tableDiv);
+                        const tbody = document.getElementById(`tbody-standings-${gIdx}-${sIdx}`);
+
+                        entries.forEach((entry, idx) => {
+                            const team = entry.team;
+                            const teamInfo = getTeamDisplay(team);
+
+                            const stats = entry.stats || [];
+                            const getStat = (name) => stats.find(s => s.name === name)?.displayValue || "0";
+
+                            const rank = idx + 1;
+                            const games = getStat("gamesPlayed");
+                            const wins = getStat("wins");
+                            const draws = getStat("ties");
+                            const losses = getStat("losses");
+                            const points = getStat("points");
+                            const diff = getStat("pointDifferential");
+                            const goalsFor = getStat("pointsFor");
+                            const goalsAgainst = getStat("pointsAgainst");
+
+                            const gdClass = parseInt(diff) > 0 ? 'goal-diff-pos' : (parseInt(diff) < 0 ? 'goal-diff-neg' : '');
+                            const rowClass = (teamInfo.raw === 'Germany' || teamInfo.raw === 'Deutschland') ? 'germany-row-table' : '';
+
+                            const row = document.createElement("tr");
+                            row.className = rowClass;
+
+                            row.innerHTML = `
+                                <td>${rank}</td>
+                                <td style="text-align: left; font-weight: 500;"><span style="display:inline-flex; align-items:center; gap:6px;">${teamInfo.flag} ${teamInfo.name}</span></td>
+                                <td>${games}</td><td>${wins}</td><td>${draws}</td><td>${losses}</td>
+                                <td>${goalsFor}</td><td>${goalsAgainst}</td>
+                                <td class="${gdClass}">${diff}</td>
+                                <td style="font-weight: bold; color: var(--accent-gold);">${points}</td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    });
+                });
+
+            } catch (error) {
+                console.error("Fehler beim Abrufen der Tabellen:", error);
+                container.innerHTML = '<div style="text-align: center; padding: 15px; color: #ff5252; font-size: 0.8rem;">Fehler beim Laden der Tabellen.</div>';
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedTimeframe = localStorage.getItem("nations_timeframe");
+            if (savedTimeframe) {
+                document.getElementById("timeframe-select").value = savedTimeframe;
+                if (savedTimeframe === 'single') {
+                    document.getElementById("single-date-wrapper").style.display = "inline-block";
+                    let savedDate = localStorage.getItem("nations_single_date");
+                    if (savedDate) {
+                        document.getElementById("single-date-input").value = savedDate;
+                    }
+                }
+            }
+
+            loadGames();
+            loadStandings();
+        });
+    </script>
 </body>
 </html>
