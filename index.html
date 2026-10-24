@@ -61,6 +61,78 @@
         .banner-red { background-color: #DD0000; flex: 1; }
         .banner-gold { background-color: #FFCC00; flex: 1; }
 
+        /* LIVE-TICKER / LAUFBAND OBEN */
+        .ticker-wrapper {
+            width: 100%;
+            background: #000000;
+            border: 1px solid var(--accent-gold);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            height: 36px;
+            position: relative;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.2);
+        }
+        .ticker-label {
+            background: var(--accent-red);
+            color: #ffffff;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 0 12px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            z-index: 2;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ticker-content-box {
+            overflow: hidden;
+            white-space: nowrap;
+            flex: 1;
+            position: relative;
+        }
+        .ticker-track {
+            display: inline-block;
+            white-space: nowrap;
+            animation: ticker-scroll 90s linear infinite;
+            font-size: 0.85rem;
+            color: #ffffff;
+            font-weight: 500;
+        }
+        .ticker-track:hover {
+            animation-play-state: paused;
+        }
+        .ticker-item {
+            display: inline-block;
+            padding: 0 25px;
+        }
+        .ticker-match-box {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            padding: 3px 10px;
+            border-radius: 4px;
+            margin: 0 5px;
+        }
+        .ticker-match-box.german-team-ticker {
+            background: rgba(221, 0, 0, 0.2);
+            border: 1px solid var(--accent-gold);
+            font-weight: bold;
+        }
+        .ticker-latest-goal {
+            color: #00ff88 !important;
+            font-weight: 800;
+            text-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+        }
+        @keyframes ticker-scroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
         header {
             text-align: center; margin-bottom: 12px;
             border-bottom: 1px solid var(--border-color);
@@ -319,6 +391,16 @@
             <div class="banner-gold"></div>
         </div>
 
+        <!-- LIVE-TICKER / LAUFBAND OBEN -->
+        <div class="ticker-wrapper">
+            <div class="ticker-label">🟢 Ticker</div>
+            <div class="ticker-content-box">
+                <div class="ticker-track" id="tickerTrack">
+                    <span class="ticker-item">Keine Live-Spiele aktiv.</span>
+                </div>
+            </div>
+        </div>
+
         <!-- HEADER -->
         <header>
             <div>
@@ -444,6 +526,8 @@
         let leagueEvents = [];
         let autoRefreshTimer = null;
         let activeFilter = 'all';
+        let latestGoalMatchId = null;
+        let previousScores = JSON.parse(localStorage.getItem('nations_previous_scores') || '{}');
 
         const DEUTSCHE_NAMEN = {
             "Germany": "Deutschland", "Netherlands": "Niederlande", "Greece": "Griechenland",
@@ -470,7 +554,7 @@
             "Kazakhstan": "kz", "Albania": "al"
         };
 
-        // --- PUSH DIENST FEST FÜR DEUTSCHLAND ---
+        // --- PUSH DIENST & SUPABASE DOPPELSCHUTZ ---
         function urlBase64ToUint8Array(base64String) {
             const padding = '='.repeat((4 - base64String.length % 4) % 4);
             const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
@@ -512,7 +596,7 @@
                     team: 'Deutschland'
                 }, { onConflict: 'endpoint' });
 
-                alert("DFB-Push-Alarm für Deutschland erfolgreich aktiviert!");
+                alert("DFB-Push-Alarm für Deutschland erfolgreich in Supabase registriert!");
             } catch (error) {
                 console.error('Fehler bei der Push-Registrierung:', error);
                 alert("Fehler beim Aktivieren der Benachrichtigung: " + error.message);
@@ -527,7 +611,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         table: 'push_subscriptions_nations',
-                        title: "🔴 DFB Tor-Alarm",
+                        title: "🔴 DFB Tor-Alarm (Test)",
                         body: "Test-Alarm für die deutsche Nationalmannschaft erfolgreich ausgelöst!"
                     })
                 });
@@ -554,7 +638,6 @@
                 alert("Falsche PIN!");
             }
         }
-        // -------------------------------------------------------------------
 
         function normalizeTeamName(name) {
             if (name === "Czech Republic") return "Czechia";
@@ -647,8 +730,11 @@
                     let rawEvents = data.events || [];
                     leagueEvents = await enrichEventsWithDetails(rawEvents);
                     leagueEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    
+                    await processGoalsAndPush(leagueEvents);
                     checkLiveState();
                     renderGroupedGames();
+                    updateTicker();
                     return;
                 } catch (e) {
                     console.error("Standard-Abruf fehlgeschlagen:", e);
@@ -696,8 +782,10 @@
                 leagueEvents = await enrichEventsWithDetails(uniqueRawEvents);
                 leagueEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+                await processGoalsAndPush(leagueEvents);
                 checkLiveState();
                 renderGroupedGames();
+                updateTicker();
             } catch (error) {
                 console.error("Fehler beim Abrufen der Spieldaten:", error);
                 container.innerHTML = '<div style="text-align: center; padding: 15px; color: #ff5252; font-size: 0.8rem;">⚠️ Fehler beim Laden der Spieldaten.</div>';
@@ -740,6 +828,89 @@
             return await Promise.all(detailedPromises);
         }
 
+        async function processGoalsAndPush(eventsList) {
+            for (let ev of eventsList) {
+                let comp = ev.competitions?.[0];
+                let home = comp?.competitors?.find(c => c.homeAway === "home");
+                let away = comp?.competitors?.find(c => c.homeAway === "away");
+                
+                if (home && away) {
+                    let statusType = ev.status?.type?.state;
+                    let matchId = 'nations_' + ev.id;
+                    let hScore = home.score !== undefined && home.score !== "" && statusType !== 'pre' ? parseInt(home.score) : null;
+                    let aScore = away.score !== undefined && away.score !== "" && statusType !== 'pre' ? parseInt(away.score) : null;
+
+                    let hInfo = getTeamDisplay(home.team);
+                    let aInfo = getTeamDisplay(away.team);
+                    let hName = hInfo.name;
+                    let aName = aInfo.name;
+
+                    let details = comp?.allEvents || comp?.details || [];
+                    details.sort((a, b) => parseInt(a.clock?.secs || 0) - parseInt(b.clock?.secs || 0));
+
+                    let runningHome = 0;
+                    let runningAway = 0;
+
+                    for (let d of details) {
+                        let typeText = (d.type && d.type.text) ? d.type.text.toLowerCase() : "";
+                        const isGoal = d.scoringPlay || typeText.includes("goal");
+
+                        if (isGoal) {
+                            const scoringTeamId = d.team?.id;
+                            const isHomeTeam = (scoringTeamId === home.team.id);
+                            if (isHomeTeam) runningHome++;
+                            else runningAway++;
+
+                            let playerName = d.athletesInvolved?.[0]?.displayName || d.player?.displayName || d.athlete?.displayName || 'Unbekannt';
+                            let clockVal = d.clock?.displayValue || '0';
+                            let scoringTeamName = isHomeTeam ? hName : aName;
+                            let scoringTeamRaw = isHomeTeam ? hInfo.raw : aInfo.raw;
+                            let uniqueGoalId = `${matchId}_${playerName}_${clockVal}`;
+
+                            let isGermanTeam = scoringTeamRaw === 'Germany' || scoringTeamRaw === 'Deutschland';
+
+                            if (playerName && playerName !== 'Unbekannt' && isGermanTeam) {
+                                try {
+                                    let { data: existing, error: checkError } = await supabaseClient
+                                        .from('sent_goals_nations')
+                                        .select('goal_id')
+                                        .eq('goal_id', uniqueGoalId)
+                                        .maybeSingle();
+
+                                    if (!existing && !checkError) {
+                                        let { error: insertError } = await supabaseClient
+                                            .from('sent_goals_nations')
+                                            .insert([{ goal_id: uniqueGoalId }]);
+
+                                        if (!insertError) {
+                                            latestGoalMatchId = ev.id;
+                                            let minStr = clockVal ? ` (${clockVal})` : '';
+                                            if (minStr && !minStr.endsWith("'")) minStr = minStr.replace(')', "')");
+
+                                            await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+                                                method: 'POST',
+                                                mode: 'cors',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    table: 'push_subscriptions_nations',
+                                                    title: `⚽ ${scoringTeamName} — Tor! (${runningHome}:${runningAway})`,
+                                                    body: `Torschütze: ${playerName}${minStr}\nBegegnung: ${hName} vs ${aName} (${runningHome}:${runningAway})`
+                                                })
+                                            });
+                                        }
+                                    }
+                                } catch (err) {
+                                    console.error("Fehler beim Verarbeiten des Nations League-Tor-Caches:", err);
+                                }
+                            }
+                        }
+                    }
+                    previousScores[matchId] = { home: hScore, away: aScore };
+                }
+            }
+            localStorage.setItem('nations_previous_scores', JSON.stringify(previousScores));
+        }
+
         function checkLiveState() {
             const isLive = leagueEvents.some(e => e.status?.type?.state === "in");
             const liveIndicator = document.getElementById("live-indicator");
@@ -754,6 +925,50 @@
                 if (autoRefreshTimer) {
                     clearInterval(autoRefreshTimer);
                     autoRefreshTimer = null;
+                }
+            }
+        }
+
+        function updateTicker() {
+            let tickerItems = [];
+            leagueEvents.forEach(ev => {
+                let isLive = ev.status?.type?.state === "in";
+                if (!isLive) return;
+
+                let comp = ev.competitions?.[0];
+                let home = comp?.competitors?.find(c => c.homeAway === "home");
+                let away = comp?.competitors?.find(c => c.homeAway === "away");
+                if (!home || !away) return;
+
+                let hInfo = getTeamDisplay(home.team);
+                let aInfo = getTeamDisplay(away.team);
+                let hScore = home.score !== undefined && home.score !== "" ? home.score : '0';
+                let aScore = away.score !== undefined && away.score !== "" ? away.score : '0';
+                let displayClock = ev.status?.displayClock || "";
+
+                let isGerman = hInfo.raw === 'Germany' || aInfo.raw === 'Germany' || hInfo.raw === 'Deutschland' || aInfo.raw === 'Deutschland';
+                let boxClass = isGerman ? "ticker-match-box german-team-ticker" : "ticker-match-box";
+                let isNewest = (ev.id === latestGoalMatchId);
+                let flameIcon = isNewest ? '🔥 ' : '';
+                let scoreClass = isNewest ? 'ticker-latest-goal' : '';
+
+                tickerItems.push(`
+                    <span class="ticker-item">
+                        <span class="${boxClass}">
+                            ${flameIcon}${hInfo.name} vs ${aInfo.name} 
+                            <span class="${scoreClass}" style="margin-left:6px;">${hScore}:${aScore}</span> 
+                            <span style="font-size:0.75rem; color:#a0a0a0; margin-left:6px;">(🔴 ${displayClock}')</span>
+                        </span>
+                    </span>
+                `);
+            });
+
+            const tickerTrack = document.getElementById('tickerTrack');
+            if (tickerTrack) {
+                if (tickerItems.length > 0) {
+                    tickerTrack.innerHTML = tickerItems.join('');
+                } else {
+                    tickerTrack.innerHTML = `<span class="ticker-item">Aktuell finden keine Live-Spiele in der UEFA Nations League statt.</span>`;
                 }
             }
         }
